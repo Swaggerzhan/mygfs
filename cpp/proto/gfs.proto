@@ -1,0 +1,160 @@
+syntax = "proto2";
+option cc_generic_services = true;
+
+package gfs;
+
+service MasterServer {
+  // for client call
+  // 获取目录下文件信息
+  // return: 当前目录下文件名
+  rpc ListFiles (ListFilesArgs) returns (ListFilesReply);
+
+  // 客户端发起某个chunk的路由信息请求
+  // args: 文件名 + chunk索引
+  // reply: chunk server路由信息
+  rpc FileRouteInfo (FileRouteInfoArgs) returns (FileRouteInfoReply);
+
+
+  // 客户端在发起写入请求之前，需要找到Master中记录的Primary
+  // 客户端需要在args给定一个文件名以及文件名所对应的chunk index
+  // 如果没有，那么Master会去创建这个新的chunk
+  // 这里会有一些不同的情况发生
+  // 1. chunk已经存在，但chunk的primary已经过期了，那么Master会重新选择
+  // 出最新的chunk version作为primary，然后分发lease
+  // 2. chunk不存在，那么Master会创建，然后选出primary
+  rpc FindLeaseHolder (FindLeaseHolderArgs) returns (FindLeaseHolderReply);
+
+  rpc AddChunk (AddChunkArgs) returns (AddChunkReply) ;
+};
+
+message ListFilesArgs {
+  required string prefix = 1;
+};
+
+message ListFilesReply {
+  required int32 state = 1;
+  repeated string filenames = 2;
+};
+
+message FileRouteInfoArgs {
+  required string filename = 1;
+  required uint64 chunk_index = 2;
+};
+
+message FileRouteInfoReply {
+  required int32 state = 1;
+  optional uint64 chunk_handle = 2;
+  repeated string route = 3; // 路由信息
+};
+
+message AddChunkArgs {
+
+};
+
+message AddChunkReply {
+
+};
+
+message FindLeaseHolderArgs {
+  required string filename = 1;
+  required uint32 chunk_index = 2;
+};
+
+message FindLeaseHolderReply {
+  required int32 state = 1;
+  optional int64 chunk_handle = 2;
+  repeated string route = 3; // 其他副本路由
+  optional string primary_route = 4; // 主副本路由
+};
+
+
+// ******************* chunk server ***********************
+
+service ChunkServer {
+  // for client call
+  rpc ReadChunk (ReadChunkArgs) returns (ReadChunkReply);
+
+  // 客户端写入操作，在运行之前，客户端应该需要在Master那边确定真正的primary
+  // 也就是需要先调用FindLeaseHolder
+  //
+  rpc WriteChunk (WriteChunkArgs) returns (WriteChunkReply);
+
+  // PutData是写入之前的第一步操作，客户端应该在Master那确定了primary了，也就是
+  // 有调用过FindLeaseHolder了
+  // 客户端先对所有的chunk server推上想要写入的数据，为真正的写入做准备
+  rpc PutData (PutDataArgs) returns (PutDataReply);
+
+
+  // for master call
+
+  // Master测试chunk server是否存活
+  rpc HeartBeat (HeartBeatArgs) returns (HeartBeatReply);
+
+  rpc InitChunk (InitChunkArgs) returns (InitChunkReply);
+
+};
+
+
+message ReadChunkArgs {
+  // UUID
+  required int64 chunk_handle = 1;
+  optional uint32 chunk_version = 2;
+  // chunk读取起始offset
+  required uint64 offset_start = 3;
+  // 需要读取的总长度
+  required uint64 length = 4;
+};
+
+message ReadChunkReply {
+  required int32 state = 1;
+  optional bytes data = 2;
+  // 实际上读取的字节数
+  optional uint32 bytes_read = 3;
+};
+
+
+message PutDataArgs {
+  optional int64 client_id = 1; // TODO:impl
+  required uint64 time_sec = 2; // sec
+  required uint64 time_nano = 3; // nano sec
+  required bytes data = 4;
+};
+
+message PutDataReply {
+  required int32 state = 1;
+  optional int64 uuid = 2; // 保留
+};
+
+message WriteChunkArgs {
+  required uint64 client_id = 1;
+  required uint64 second = 2;
+  required uint64 nano_sec = 3;
+  required uint64 chunk_handle = 4; // 写入的chunk UUID
+  required uint64 offset = 5; // 在chunk中的offset位置进行写入
+  repeated string secondaries_route = 6; // 其他副本
+  optional uint64 tmp_data_offset = 7; // 保留
+};
+
+message WriteChunkReply {
+  required int32 state = 1;
+  optional uint64 bytes_written = 2;
+};
+
+message HeartBeatArgs {
+  required int32 echo = 1;
+};
+
+message HeartBeatReply {
+  required int32 echo = 1;
+};
+
+message InitChunkArgs {
+  // 独一无二的UUID
+  required int64 chunk_handle = 1;
+};
+
+message InitChunkReply {
+  required int32 state = 1;
+};
+
+

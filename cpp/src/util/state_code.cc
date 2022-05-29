@@ -20,3 +20,8 @@ std::string debug_string(state_code c) {
   return storage_state_code[c];
 }
 
+std::string debug_string(int32_t c) {
+  return storage_state_code[c];
+}
+
+

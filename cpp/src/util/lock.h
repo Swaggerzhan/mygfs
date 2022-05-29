@@ -9,6 +9,8 @@
 
 class Lock {
 public:
+  Lock();
+  ~Lock();
   virtual void lock();
   virtual void unlock();
   virtual void read_lock();

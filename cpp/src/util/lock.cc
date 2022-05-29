@@ -3,6 +3,21 @@
 //
 #include "lock.h"
 
+Lock::Lock() {
+
+}
+
+Lock::~Lock() {
+
+}
+
+void Lock::lock() {}
+void Lock::unlock() {}
+void Lock::write_unlock() {}
+void Lock::write_lock() {}
+void Lock::read_lock() {}
+void Lock::read_unlock() {}
+
 
 void RWLOCK::read_lock() {
   pthread_rwlock_rdlock(&rw_lock_);

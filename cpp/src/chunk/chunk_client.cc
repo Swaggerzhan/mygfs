@@ -18,7 +18,6 @@ ChunkClient::~ChunkClient() {
 
 }
 
-
 bool ChunkClient::init() {
   brpc::ChannelOptions options;
   options.timeout_ms = 2000;
@@ -29,6 +28,14 @@ bool ChunkClient::init() {
   }
   connected_.store(true, std::memory_order_relaxed);
   return true;
+}
+
+std::string ChunkClient::name() {
+  return route_;
+}
+
+bool ChunkClient::connected() {
+  return connected_.load(std::memory_order_relaxed);
 }
 
 int64_t ChunkClient::read(uint64_t chunk_handle, uint32_t version,
@@ -71,6 +78,26 @@ int64_t ChunkClient::read(uint64_t chunk_handle, uint32_t version,
   return reply.bytes_read();
 }
 
+// ************************** Master call rpc *****************************
+bool ChunkClient::heartbeat() {
+  if ( !connected_.load(std::memory_order_relaxed) ) {
+    LOG(ERROR) << "channel disconnected at route: " << route_;
+    return -1;
+  }
+  brpc::Controller cntl;
+  HeartBeatArgs args;
+  HeartBeatReply reply;
+  args.set_echo(1);
+
+  ChunkServer_Stub stub(&channel_);
+  stub.HeartBeat(&cntl, &args, &reply, nullptr);
+  if ( cntl.Failed() || reply.echo() != 1) {
+    LOG(ERROR) << "heartbeat failed at route: " << route_ << " because: " << cntl.ErrorText();
+    connected_.store(false, std::memory_order_relaxed);
+    return false;
+  }
+  return true;
+}
 
 
 

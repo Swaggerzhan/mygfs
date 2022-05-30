@@ -50,6 +50,19 @@ void ChunkServerImpl::ReadChunk(google::protobuf::RpcController *cntl,
   // TODO: delete mem
 }
 
+// ****************************** Master call rpc ************************
+void ChunkServerImpl::HeartBeat(google::protobuf::RpcController *cntl,
+                                const HeartBeatArgs *args,
+                                HeartBeatReply *reply,
+                                google::protobuf::Closure *done) {
+  brpc::ClosureGuard guard(done);
+  reply->set_echo(args->echo());
+}
+
+
+
+
+
 // ******************************* DEBUG *********************************
 
 

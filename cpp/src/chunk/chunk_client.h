@@ -18,6 +18,10 @@ public:
 
   bool init();
 
+  std::string name();
+
+  bool connected();
+
   // ********** for client ***********
 
   /*
@@ -35,6 +39,7 @@ public:
 
 
   // ********** for master ***********
+  bool heartbeat();
 
 private:
 

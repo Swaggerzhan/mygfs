@@ -21,6 +21,11 @@ public:
                  ReadChunkReply* reply,
                  google::protobuf::Closure* done) override;
 
+  // Master call rpc
+  void HeartBeat(google::protobuf::RpcController* cntl,
+                 const HeartBeatArgs* args,
+                 HeartBeatReply* reply,
+                 google::protobuf::Closure* done ) override;
 
 
   // *********************** DEBUG ***************************

@@ -9,6 +9,7 @@
 #include <vector>
 #include "src/util/lock.h"
 #include "proto/out/gfs.pb.h"
+#include "src/chunk/chunk_client.h"
 
 namespace gfs {
 
@@ -19,6 +20,9 @@ typedef std::vector<ChunkServerClient*> ChunkServerClientPtrs;
 
 class MasterServerImpl : public MasterServer {
 public:
+
+  // 链接至chunk服务器
+  void start();
 
   void ListFiles (google::protobuf::RpcController* cntl,
                   const ListFilesArgs* args,
@@ -31,6 +35,12 @@ public:
                       FileRouteInfoReply* reply,
                       google::protobuf::Closure* done) override;
 
+  // ******************* DEBUG ************************
+  void start_debug();
+  /*
+   * 填充测试的chunk到Master服务器内存中
+   */
+  void padding_test_file();
 
 private:
 
@@ -41,7 +51,10 @@ private:
 
   RWLOCK chunk_info_rw_lock_;
   // UUID -> 保存此UUID的chunk server
-  std::map<uint64_t, ChunkServerClientPtrs> chunk_info_;
+  std::map<uint64_t, std::vector<std::string>> chunk_route_info_;
+
+  // route -> chunk server
+  std::map<std::string, ChunkClient*> chunk_servers_;
 
   // UUID -> 获得Lease的服务器，每个chunk都有一个id标识
   std::map<uint64_t, uint64_t> lease_info_;

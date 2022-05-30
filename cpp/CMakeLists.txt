@@ -27,6 +27,9 @@ find_library(GLOBAL_LEVELDB_LIBRARY_LIB NAMES leveldb)
 
 message("***********************FIND*************************")
 
+message("INCLUDE PATH INFO: ${CMAKE_INCLUDE_PATH}")
+message("LIBRARY PATH INFO: ${CMAKE_LIBRARY_PATH}")
+
 message("FIND: ${GLOBAL_BRPC_INCLUDE_DIR}")
 message("FIND: ${GLOBAL_BRPC_LIBRARY_DIR}")
 
@@ -51,6 +54,7 @@ aux_source_directory(proto/out PROTOBUF_SOURCE_FILES)
 aux_source_directory(src/master MASTER_SOURCE_FILES)
 aux_source_directory(src/chunk CHUNK_SOURCE_FILES)
 aux_source_directory(src/util UTIL_SOURCE_FILES)
+aux_source_directory(src/gfs GFS_SOURCE_FILES)
 
 set(GLOBAL_PROTOBUF_SOURCE_FILES
         ${PROJECT_SOURCE_DIR}/proto/out/gfs.pb.h
@@ -78,6 +82,7 @@ add_library(${NAME}
         ${MASTER_SOURCE_FILES}
         ${CHUNK_SOURCE_FILES}
         ${UTIL_SOURCE_FILES}
+        ${GFS_SOURCE_FILES}
         )
 
 

@@ -4,8 +4,15 @@
 #include "master_server.h"
 #include "brpc/server.h"
 #include "src/util/state_code.h"
+#include "src/util/conf.h"
 
 namespace gfs {
+
+void MasterServerImpl::start() {
+
+
+
+}
 
 void MasterServerImpl::ListFiles(google::protobuf::RpcController *cntl,
                                  const ListFilesArgs *args,
@@ -59,8 +66,8 @@ void MasterServerImpl::FileRouteInfo(google::protobuf::RpcController *cntl,
   }
 
   ReadLockGuard read_guard(&chunk_info_rw_lock_);
-  auto it = chunk_info_.find(chunk_handle);
-  if ( it == chunk_info_.end() ) {
+  auto it = chunk_route_info_.find(chunk_handle);
+  if ( it == chunk_route_info_.end() ) {
     reply->set_state(state_err);
     return;
   }
@@ -69,6 +76,41 @@ void MasterServerImpl::FileRouteInfo(google::protobuf::RpcController *cntl,
 
 
   reply->set_state(state_ok);
+}
+
+
+
+// ******************* DEBUG *************************
+void MasterServerImpl::start_debug() {
+  // 连接至所有的chunk server
+  ChunkClient* client1 = new ChunkClient(GFS_CHUNK_SERVER_1_ROUTE);
+  ChunkClient* client2 = new ChunkClient(GFS_CHUNK_SERVER_2_ROUTE);
+  ChunkClient* client3 = new ChunkClient(GFS_CHUNK_SERVER_3_ROUTE);
+
+  if (client1->init() && client1->heartbeat()) {
+    chunk_servers_[GFS_CHUNK_SERVER_1_ROUTE] = client1;
+  }else {
+    LOG(ERROR) << "connect to route: " << GFS_CHUNK_SERVER_1_ROUTE << " failed";
+  }
+
+  if (client2->init() && client2->heartbeat()) {
+    chunk_servers_[GFS_CHUNK_SERVER_2_ROUTE] = client2;
+  }else {
+    LOG(ERROR) << "connect to route: " << GFS_CHUNK_SERVER_2_ROUTE << " failed";
+  }
+
+  if (client3->init() && client3->heartbeat()) {
+    chunk_servers_[GFS_CHUNK_SERVER_3_ROUTE] = client3;
+  }else {
+    LOG(ERROR) << "connect to route: " << GFS_CHUNK_SERVER_3_ROUTE << " failed";
+  }
+
+  padding_test_file();
+
+}
+
+void MasterServerImpl::padding_test_file() {
+
 }
 
 }; // namespace gfs

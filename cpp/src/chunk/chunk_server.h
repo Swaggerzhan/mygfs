@@ -27,6 +27,11 @@ public:
                  HeartBeatReply* reply,
                  google::protobuf::Closure* done ) override;
 
+  void InitChunk(google::protobuf::RpcController* cntl,
+                 const InitChunkArgs* args,
+                 InitChunkReply* reply,
+                 google::protobuf::Closure* done) override;
+
 
   // *********************** DEBUG ***************************
 

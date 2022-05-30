@@ -41,6 +41,11 @@ public:
   // ********** for master ***********
   bool heartbeat();
 
+  /*
+   * 在chunk server上生成一个新的chunk
+   */
+  bool init_chunk(uint64_t chunk_handle);
+
 private:
 
   brpc::Channel channel_;

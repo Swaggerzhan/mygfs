@@ -99,6 +99,33 @@ bool ChunkClient::heartbeat() {
   return true;
 }
 
+bool ChunkClient::init_chunk(uint64_t chunk_handle) {
+  if ( !connected_.load(std::memory_order_relaxed) ) {
+    LOG(ERROR) << "channel disconnected at route: " << route_;
+    return -1;
+  }
+
+  brpc::Controller cntl;
+  InitChunkArgs args;
+  InitChunkReply reply;
+  args.set_chunk_handle(chunk_handle);
+
+  ChunkServer_Stub stub(&channel_);
+  stub.InitChunk(&cntl, &args, &reply, nullptr);
+
+  if ( cntl.Failed() ) {
+    LOG(ERROR) << "init chunk failed at route: " << route_ << " because: " << cntl.ErrorText();
+    if (cntl.IsCloseConnection()) {
+      connected_.store(false, std::memory_order_relaxed);
+    }
+    return false;
+  }
+  if ( reply.state() != state_ok ) {
+    LOG(INFO) << "server error at: " << route_ << " reply: " << debug_string(reply.state());
+    return false;
+  }
+  return true;
+}
 
 
 };

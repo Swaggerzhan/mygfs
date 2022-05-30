@@ -59,6 +59,19 @@ void ChunkServerImpl::HeartBeat(google::protobuf::RpcController *cntl,
   reply->set_echo(args->echo());
 }
 
+void ChunkServerImpl::InitChunk(google::protobuf::RpcController *cntl,
+                                const InitChunkArgs *args,
+                                InitChunkReply *reply,
+                                google::protobuf::Closure *done) {
+  brpc::ClosureGuard guard(done);
+  bool ret = disk_.create_chunk(args->chunk_handle(), 1);
+  if ( !ret ) {
+    reply->set_state(state_err);
+  }else {
+    reply->set_state(state_ok);
+  }
+}
+
 
 
 

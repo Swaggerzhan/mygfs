@@ -22,6 +22,7 @@ public:
    */
   char* fetch_chunk(uint64_t chunk_handle, uint32_t version, uint64_t* chunk_size);
 
+  bool create_chunk(uint64_t chunk_handle, uint32_t version);
 
   // *************************** DEBUG **********************************
 

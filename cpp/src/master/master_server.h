@@ -24,6 +24,9 @@ public:
   // 链接至chunk服务器
   void start();
 
+  MasterServerImpl();
+  ~MasterServerImpl();
+
   void ListFiles (google::protobuf::RpcController* cntl,
                   const ListFilesArgs* args,
                   ListFilesReply* reply,
@@ -36,11 +39,16 @@ public:
                       google::protobuf::Closure* done) override;
 
   // ******************* DEBUG ************************
+
+  /*
+   * 以debug的形式启动Master服务器
+   */
   void start_debug();
   /*
    * 填充测试的chunk到Master服务器内存中
    */
   void padding_test_file();
+
 
 private:
 

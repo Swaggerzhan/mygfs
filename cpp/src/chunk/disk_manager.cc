@@ -29,7 +29,21 @@ char* DiskManager::fetch_chunk(uint64_t chunk_handle, uint32_t version, uint64_t
   if ( bytes_read < 0 ) {
     return nullptr;
   }
+  close(fd);
   return buf;
+}
+
+bool DiskManager::create_chunk(uint64_t chunk_handle, uint32_t version) {
+  std::string filename;
+  filename += GFS_CHUNK_SERVER_ROOT_DIR;
+  filename += "/";
+  filename += std::to_string(chunk_handle) + std::to_string(version);
+  int fd = open(filename.c_str(), O_CREAT | O_RDWR);
+  if ( fd < 0 ) {
+    return false;
+  }
+  close(fd);
+  return true;
 }
 
 

@@ -8,6 +8,21 @@
 
 namespace gfs {
 
+
+MasterServerImpl::MasterServerImpl()
+: files_()
+, files_rw_lock_()
+, chunk_info_rw_lock_()
+, chunk_route_info_()
+, chunk_servers_()
+, lease_info_()
+{
+}
+
+MasterServerImpl::~MasterServerImpl() noexcept {
+
+}
+
 void MasterServerImpl::start() {
 
 
@@ -110,6 +125,22 @@ void MasterServerImpl::start_debug() {
 }
 
 void MasterServerImpl::padding_test_file() {
+  for (auto it : chunk_servers_) {
+    bool ret = it.second->init_chunk(TEST_FILE_CHUNK_HANDLE_1);
+    if ( !ret ) {
+      LOG(ERROR) << "some error happen";
+    }
+    ret = it.second->init_chunk(TEST_FILE_CHUNK_HANDLE_2);
+    if ( !ret ) {
+      LOG(ERROR) << "some error happen";
+    }
+  }
+  std::vector<uint64_t> chunks = {TEST_FILE_CHUNK_HANDLE_1, TEST_FILE_CHUNK_HANDLE_2};
+  files_.emplace(TEST_FILE_NAME, chunks);
+  std::vector<std::string> routes = {GFS_CHUNK_SERVER_1_ROUTE, GFS_CHUNK_SERVER_2_ROUTE,
+                                     GFS_CHUNK_SERVER_3_ROUTE};
+  chunk_route_info_[TEST_FILE_CHUNK_HANDLE_1] = routes;
+  chunk_route_info_[TEST_FILE_CHUNK_HANDLE_2] = routes;
 
 }
 

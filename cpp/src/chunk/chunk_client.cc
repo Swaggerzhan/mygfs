@@ -38,13 +38,13 @@ bool ChunkClient::connected() {
   return connected_.load(std::memory_order_relaxed);
 }
 
-int64_t ChunkClient::read(uint64_t chunk_handle, uint32_t version,
-                          char *buf, uint64_t offset, uint64_t length) {
+int64_t ChunkClient::read_chunk(uint64_t chunk_handle, uint32_t version,
+                          char *buf, int64_t offset, int64_t length) {
   if ( !connected_.load(std::memory_order_relaxed) ) {
     LOG(ERROR) << "channel disconnected at route: " << route_;
     return -1;
   }
-
+  LOG(INFO) << 1;
   brpc::Controller cntl;
   ReadChunkArgs args;
   ReadChunkReply reply;
@@ -54,10 +54,10 @@ int64_t ChunkClient::read(uint64_t chunk_handle, uint32_t version,
   args.set_chunk_version(version);
   args.set_offset_start(offset);
   args.set_length(length);
-
+  LOG(INFO) << 2 ;
   ChunkServer_Stub stub(&channel_);
   stub.ReadChunk(&cntl, &args, &reply, nullptr);
-
+  LOG(INFO) << 3;
   if ( cntl.Failed() ) {
     LOG(ERROR) << "read failed at route: " << route_ << " because: " << cntl.ErrorText();
     if (cntl.IsCloseConnection()) {
@@ -65,7 +65,7 @@ int64_t ChunkClient::read(uint64_t chunk_handle, uint32_t version,
     }
     return -1;
   }
-
+  LOG(INFO) << 4;
   if ( reply.state() != state_ok ) {
     LOG(INFO) << "server error at: " << route_ << " reply: " << debug_string(reply.state());
     return -1;
@@ -74,7 +74,9 @@ int64_t ChunkClient::read(uint64_t chunk_handle, uint32_t version,
   if ( reply.bytes_read() == 0 ) {
     return 0;
   }
+  LOG(INFO) << "copy....";
   memcpy(buf, reply.mutable_data()->c_str(), reply.bytes_read());
+  LOG(INFO) << "copy ok";
   return reply.bytes_read();
 }
 

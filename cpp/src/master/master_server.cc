@@ -87,6 +87,10 @@ void MasterServerImpl::FileRouteInfo(google::protobuf::RpcController *cntl,
     return;
   }
 
+  for (auto r : it->second) {
+    reply->add_route(r);
+  }
+  reply->set_chunk_handle(chunk_handle);
   // TODO: fetch route info from ChunkClientPtr by it
 
 

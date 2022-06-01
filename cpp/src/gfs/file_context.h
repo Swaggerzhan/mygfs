@@ -44,7 +44,7 @@ private:
 
   std::string filename_;
 
-  uint64_t offset_;
+  int64_t offset_;
 
   // chunk_index -> chunk_handle: UUID
   std::map<uint64_t, uint64_t> chunks_;

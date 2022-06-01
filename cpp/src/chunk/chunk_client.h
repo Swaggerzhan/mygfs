@@ -32,8 +32,8 @@ public:
    * @param length: 期望读取的长度
    * @return: 真实的读取长度，0为结束，负数为异常
    */
-  int64_t read(uint64_t chunk_handle, uint32_t version, char* buf,
-                uint64_t offset, uint64_t length);
+  int64_t read_chunk(uint64_t chunk_handle, uint32_t version, char* buf,
+                int64_t offset, int64_t length);
 
 
 

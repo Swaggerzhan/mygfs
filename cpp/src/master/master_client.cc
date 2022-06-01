@@ -11,17 +11,19 @@ namespace gfs {
 MasterClient::MasterClient(const std::string &route)
 : route_(route)
 , connected_(false)
+, channel_()
 {
 }
 
 bool MasterClient::init() {
   brpc::ChannelOptions options;
   options.timeout_ms = 2000; // 2000ms
-  int ret = channel_.Init(route_.c_str(), "", &options);
+  int ret = channel_.Init(route_.c_str(), "", nullptr);
   if ( ret != 0 ) {
     LOG(ERROR) << "init channel error at: " << route_;
     return false;
   }
+  LOG(INFO) << "init channel to: " << route_ << " ok";
   connected_.store(true, std::memory_order_relaxed);
   return true;
 }
@@ -80,7 +82,7 @@ bool MasterClient::file_info_at(const std::string &filename, uint64_t chunk_inde
 
   stub.FileRouteInfo(&cntl, &args, &reply, nullptr);
   if ( cntl.Failed() ) {
-    LOG(ERROR) << "file route info failed at: " << route_;
+    LOG(ERROR) << "file route info failed at: " << route_ << " because: " << cntl.ErrorText();
     if ( cntl.IsCloseConnection() ) {
       connected_.store(false, std::memory_order_relaxed);
     }
@@ -97,6 +99,48 @@ bool MasterClient::file_info_at(const std::string &filename, uint64_t chunk_inde
   }
   *chunk_handle = reply.chunk_handle();
   return true;
+}
+
+bool MasterClient::file_info(const std::string &filename, std::map<uint64_t, uint64_t> &chunks,
+                             std::map<uint64_t, std::vector<std::string>> &routes) {
+  if ( !connected_.load(std::memory_order_relaxed) ) {
+    LOG(ERROR) << "not connect to: " << route_ << " yet!";
+    return false;
+  }
+
+  FileRouteInfoArgs args;
+  FileRouteInfoReply reply;
+  uint64_t chunk_index = 0;
+  args.set_filename(filename);
+  args.set_chunk_index(chunk_index);
+  MasterServer_Stub stub(&channel_);
+
+  while ( true ) {
+    brpc::Controller cntl;
+    stub.FileRouteInfo(&cntl, &args, &reply, nullptr);
+    if ( cntl.Failed() ) {
+      LOG(ERROR) << "file route info failed at: " << route_ << " because: " << cntl.ErrorText();
+      if ( cntl.IsCloseConnection() ) {
+        connected_.store(false, std::memory_order_relaxed);
+      }
+      return false;
+    }
+    if ( reply.state() == state_file_chunk_index_err ) {
+      return true;
+    }
+    if ( reply.state() != state_ok ) {
+      return false;
+    }
+    chunks[chunk_index] = reply.chunk_handle();
+    LOG(INFO) << "reply route size: " << reply.route_size();
+    std::vector<std::string> tmp;
+    for (auto it: reply.route()) {
+      tmp.push_back(it);
+    }
+    routes[reply.chunk_handle()] = tmp;
+    chunk_index += 1;
+    args.set_chunk_index(chunk_index);
+  }
 }
 
 

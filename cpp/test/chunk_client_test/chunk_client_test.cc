@@ -7,25 +7,36 @@
 
 using namespace std;
 
+void test_at_chunk_server_1();
+
 int main() {
 
+  test_at_chunk_server_1();
+
+}
+
+void test_at_chunk_server_1() {
   gfs::ChunkClient client(GFS_CHUNK_SERVER_1_ROUTE);
   bool ret = client.init();
-  if ( !ret ) {
-    LOG(ERROR) << "connect to route: " << GFS_CHUNK_SERVER_1_ROUTE << " failed";
-    return -1;
-  }
 
-  char buf[CHUNK_SIZE];
+  assert ( ret == true );
 
-  int64_t byte_read = client.read(DEBUG_CHUNK_UUID, DEBUG_CHUNK_VERSION_BEGIN,
-                                  buf, 0, 10);
-  if ( byte_read != 10 ) {
-    LOG(INFO) << "error";
+  char buf[CHUNK_SIZE * 2];
+
+
+  int64_t byte_read = client.read_chunk(TEST_FILE_CHUNK_HANDLE_1, DEBUG_CHUNK_VERSION_BEGIN,
+                                  buf, 0, CHUNK_SIZE);
+
+  assert ( byte_read == CHUNK_SIZE );
+
+  byte_read = client.read_chunk(TEST_FILE_CHUNK_HANDLE_2, DEBUG_CHUNK_VERSION_BEGIN,
+                                buf + CHUNK_SIZE, 0, CHUNK_SIZE);
+
+  assert( byte_read == CHUNK_SIZE );
+  for (int i=0; i<CHUNK_SIZE * 2; ++i) {
+    cout << buf[i] << endl;
   }
-  for (int i=0; i<byte_read; ++i) {
-    cout << i << ": " << buf[i] << endl;
-  }
+  cout << endl;
 
 }
 

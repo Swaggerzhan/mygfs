@@ -51,6 +51,7 @@ add_subdirectory(test/chunk_server_test)
 add_subdirectory(test/chunk_client_test)
 add_subdirectory(test/master_server_test)
 add_subdirectory(test/master_client_test)
+add_subdirectory(test/gfs_test)
 
 aux_source_directory(proto/out PROTOBUF_SOURCE_FILES)
 aux_source_directory(src/master MASTER_SOURCE_FILES)

@@ -40,14 +40,14 @@ service ChunkServer {
 message ReadChunkArgs {
     required uint64 chunk_handle = 1; // chunk UUID
     optional uint32 chunk_version = 2; // version
-    required uint64 offset = 3;
-    required uint64 length = 4;
+    required int64 offset = 3;
+    required int64 length = 4;
 };
 
 message ReadChunkReply {
     required int32 state = 1;
     optional bytes data = 2;
-    optional uint64 bytes_read = 3; // 实际读取的字节数
+    optional int64 bytes_read = 3; // 实际读取的字节数
 };
 ```
 

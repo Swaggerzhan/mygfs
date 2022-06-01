@@ -22,11 +22,12 @@ char* DiskManager::fetch_chunk(uint64_t chunk_handle, uint32_t version, uint64_t
   std::string filename;
   filename += root_;
   filename += "/";
-  filename += std::to_string(chunk_handle) + std::to_string(version);
+  filename += std::to_string(chunk_handle) + std::to_string(DEBUG_CHUNK_VERSION_BEGIN);
 
   int fd = open(filename.c_str(), O_RDONLY);
   if ( fd < 0 ) {
     *chunk_size = -1;
+    LOG(ERROR) << "open file: " << filename << " failed";
     return nullptr;
   }
 
@@ -35,6 +36,7 @@ char* DiskManager::fetch_chunk(uint64_t chunk_handle, uint32_t version, uint64_t
   uint64_t bytes_read = ::read(fd, buf, CHUNK_SIZE);
   *chunk_size = bytes_read;
   if ( bytes_read < 0 ) {
+    LOG(ERROR) << "read from file: " << filename << " failed";
     return nullptr;
   }
   close(fd);

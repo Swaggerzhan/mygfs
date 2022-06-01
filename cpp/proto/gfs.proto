@@ -100,16 +100,16 @@ message ReadChunkArgs {
   required uint64 chunk_handle = 1;
   optional uint32 chunk_version = 2;
   // chunk读取起始offset
-  required uint64 offset_start = 3;
+  required int64 offset_start = 3;
   // 需要读取的总长度
-  required uint64 length = 4;
+  required int64 length = 4;
 };
 
 message ReadChunkReply {
   required int32 state = 1;
   optional bytes data = 2;
   // 实际上读取的字节数
-  optional uint32 bytes_read = 3;
+  optional int64 bytes_read = 3;
 };
 
 

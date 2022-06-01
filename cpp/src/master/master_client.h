@@ -35,6 +35,13 @@ public:
   bool file_info_at(const std::string& filename, uint64_t chunk_index,
                     std::vector<std::string>& routes, uint64_t* chunk_handle);
 
+  /*
+   * 获取当前文件中所有chunk_index对应的UUID信息
+   */
+  bool file_info(const std::string& filename,
+                std::map<uint64_t, uint64_t>& chunks,
+                std::map<uint64_t, std::vector<std::string>>& routes);
+
 
   // ************** DEBUG ************************
 

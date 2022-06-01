@@ -5,6 +5,10 @@
 #include "file_context.h"
 #include "src/master/master_client.h"
 
+// for debug
+#include <iostream>
+using std::cout;
+using std::endl;
 
 namespace gfs {
 
@@ -30,6 +34,7 @@ bool FileContext::chunk_info_fetch(uint32_t begin_chunk_index, uint32_t end_chun
     if ( chunks_.find(i) == chunks_.end() )  {
       routes.clear();
       // TODO: 区分超出chunk的读取导致的错误
+      LOG(INFO) << "fetch chunk index: " << i;
       bool ret = client_->file_info_at(filename_, i, routes, &chunk_handle);
       if ( !ret ) {
         LOG(ERROR) << "file info error";

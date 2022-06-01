@@ -13,7 +13,7 @@ namespace gfs {
 class ChunkServerImpl : public ChunkServer {
 public:
 
-  ChunkServerImpl();
+  ChunkServerImpl(int port=30000);
   ~ChunkServerImpl();
 
   void ReadChunk(google::protobuf::RpcController* cntl,
@@ -42,6 +42,7 @@ private:
 
   DiskManager disk_;
 
+  int port_; // for id
 
 
 };

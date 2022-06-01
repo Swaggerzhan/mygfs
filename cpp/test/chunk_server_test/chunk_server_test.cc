@@ -6,21 +6,18 @@
 #include "brpc/server.h"
 #include "src/util/conf.h"
 
-void select_start_port(int id, int* port);
 
 int main(int argc, char** args) {
   if ( argc < 2 ) {
-    LOG(ERROR) << "USAGE: ./target + id";
+    LOG(ERROR) << "USAGE: ./target + port";
     return -1;
   }
 
-  int port;
 
-  select_start_port(std::stoi(args[1]), &port);
+  int port = std::stoi(args[1]);
+  gfs::ChunkServerImpl chunk_server(port);
 
-  gfs::ChunkServerImpl chunk_server;
-
-  // chunk_server.start_debug();
+  chunk_server.start_debug();
 
   brpc::Server server;
 
@@ -42,15 +39,4 @@ int main(int argc, char** args) {
     sleep(1);
   }
 
-}
-
-void select_start_port(int id, int* port) {
-  switch (id) {
-    case 1 : {*port = 30001; break;}
-    case 2 : {*port = 30002; break;}
-    case 3 : {*port = 30003; break;}
-    default: {
-      LOG(ERROR) << "Error id: " << id;
-    }
-  }
 }

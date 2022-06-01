@@ -36,6 +36,12 @@ public:
                     std::vector<std::string>& routes, uint64_t* chunk_handle);
 
 
+  // ************** DEBUG ************************
+
+  /*
+   * 调用list_file并且显示服务器上的文件内容
+   */
+  void print_files();
 
 
 private:

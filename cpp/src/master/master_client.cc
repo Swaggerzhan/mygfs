@@ -4,7 +4,7 @@
 
 #include "src/util/state_code.h"
 #include "master_client.h"
-
+#include <iostream> // for debug print
 
 namespace gfs {
 
@@ -100,7 +100,20 @@ bool MasterClient::file_info_at(const std::string &filename, uint64_t chunk_inde
 }
 
 
+// ******************* DEBUG *********************
+#include <cassert>
+using std::cout;
+using std::endl;
+void MasterClient::print_files() {
+  std::vector<std::string> files;
+  bool ret = list_file(files);
 
+  assert ( ret == true );
+  cout << "files: " << endl;
+  for (auto it : files ) {
+    cout << it << endl;
+  }
+}
 
 };
 

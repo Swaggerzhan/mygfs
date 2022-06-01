@@ -7,7 +7,10 @@
 namespace gfs {
 
 
-ChunkServerImpl::ChunkServerImpl() {
+ChunkServerImpl::ChunkServerImpl(int port)
+: port_(port)
+, disk_(port)
+{
 
 }
 

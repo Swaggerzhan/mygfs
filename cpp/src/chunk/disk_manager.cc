@@ -4,15 +4,23 @@
 
 #include <unistd.h>
 #include <fcntl.h>
+#include "brpc/server.h"
 #include "disk_manager.h"
 #include "src/util/conf.h"
 
 namespace gfs {
 
+DiskManager::DiskManager(int port)
+: port_(port)
+{
+  root_ += GFS_CHUNK_SERVER_ROOT_DIR;
+  root_ += std::to_string(port);
+  LOG(INFO) << "chunk server root at: " << root_;
+}
 
 char* DiskManager::fetch_chunk(uint64_t chunk_handle, uint32_t version, uint64_t *chunk_size) {
   std::string filename;
-  filename += GFS_CHUNK_SERVER_ROOT_DIR;
+  filename += root_;
   filename += "/";
   filename += std::to_string(chunk_handle) + std::to_string(version);
 
@@ -35,7 +43,7 @@ char* DiskManager::fetch_chunk(uint64_t chunk_handle, uint32_t version, uint64_t
 
 bool DiskManager::create_chunk(uint64_t chunk_handle, uint32_t version) {
   std::string filename;
-  filename += GFS_CHUNK_SERVER_ROOT_DIR;
+  filename += root_;
   filename += "/";
   filename += std::to_string(chunk_handle) + std::to_string(version);
   int fd = open(filename.c_str(), O_CREAT | O_RDWR);
@@ -47,9 +55,44 @@ bool DiskManager::create_chunk(uint64_t chunk_handle, uint32_t version) {
 }
 
 
-#include <cassert>
 // ****************************** DEBUG ******************************
+#include <cassert>
+
+static void padding_gfs_test_file(const std::string& root) {
+  LOG(INFO) << "padding gfs test file";
+  std::string filename;
+  filename += root;
+  filename += "/";
+  filename += std::to_string(TEST_FILE_CHUNK_HANDLE_1) + std::to_string(DEBUG_CHUNK_VERSION_BEGIN);
+  int fd = open(filename.c_str(), O_CREAT | O_RDWR );
+  assert( fd > 0 );
+  char tmp[CHUNK_SIZE];
+  for (int i=0; i<CHUNK_SIZE; ++i) {
+    tmp[i] = '0';
+  }
+  int ret = ::write(fd, tmp, CHUNK_SIZE);
+  assert(ret == CHUNK_SIZE);
+  LOG(INFO) << "PADDING :" << filename << " OK";
+  close(fd);
+  filename.clear();
+  filename += root;
+  filename += "/";
+  filename += std::to_string(TEST_FILE_CHUNK_HANDLE_2) + std::to_string(DEBUG_CHUNK_VERSION_BEGIN);
+  fd = open(filename.c_str(), O_CREAT | O_RDWR );
+  assert( fd > 0 );
+  for (int i=0; i<CHUNK_SIZE; ++i) {
+    tmp[i] = '1';
+  }
+  ret = ::write(fd, tmp, CHUNK_SIZE);
+  assert( ret == CHUNK_SIZE);
+  LOG(INFO) << "PADDING :" << filename << " OK";
+  close(fd);
+}
+
+
+
 void DiskManager::padding_debug_chunk() {
+  LOG(INFO) << "disk padding debug chunk...";
   std::string filename;
   filename += GFS_CHUNK_SERVER_ROOT_DIR;
   filename += "/";
@@ -63,7 +106,13 @@ void DiskManager::padding_debug_chunk() {
   }
   int ret = ::write(fd, tmp, CHUNK_SIZE);
   assert( ret > 0 );
+
+
+  // for gfs_test_file
+  padding_gfs_test_file(root_);
+
 }
+
 
 
 

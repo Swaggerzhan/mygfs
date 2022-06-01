@@ -12,7 +12,7 @@ namespace gfs {
 class DiskManager {
 public:
 
-  DiskManager() = default;
+  DiskManager(int port);
   ~DiskManager() = default;
 
 
@@ -32,6 +32,8 @@ public:
 private:
 
   // TODO: LRU
+  int port_;
+  std::string root_;
 
 
 };

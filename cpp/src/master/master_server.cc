@@ -9,6 +9,32 @@
 namespace gfs {
 
 
+struct ChunkServerInfo {
+public:
+
+  ChunkServerInfo(ChunkClient* client)
+  : chunk_client(client)
+  , lease_expire(0)
+  {}
+
+  ~ChunkServerInfo() {
+    delete chunk_client;
+  }
+
+  /*
+   * 将当前的chunk分配为
+   */
+  void mark_as_primary() {
+
+  }
+
+  ChunkClient* chunk_client;
+  uint64_t lease_expire; // Lease 过期时间，绝对时间
+};
+
+
+
+
 MasterServerImpl::MasterServerImpl()
 : files_()
 , files_rw_lock_()
@@ -95,6 +121,36 @@ void MasterServerImpl::FileRouteInfo(google::protobuf::RpcController *cntl,
 
 
   reply->set_state(state_ok);
+}
+
+void MasterServerImpl::FindLeaseHolder(google::protobuf::RpcController *cntl,
+                                       const FindLeaseHolderArgs *args,
+                                       FindLeaseHolderReply *reply,
+                                       google::protobuf::Closure *done) {
+  brpc::ClosureGuard guard(done);
+  ReadLockGuard read_guard(&files_rw_lock_);
+  auto it = files_.find(args->filename());
+  if ( it == files_.end() ) { // 文件不存在
+    reply->set_state(state_file_not_found);
+    return;
+  }
+  if ( args->chunk_index() >= it->second.size() ) { // chunk index失败
+    reply->set_state(state_file_chunk_index_err);
+    return;
+  }
+  uint64_t chunk_handle = it->second[args->chunk_index()];
+  // 找出Lease，如果没有，那就生成
+  {
+    WriteLockGuard write_guard(&lease_info_rw_lock_);
+    auto lease = lease_info_.find(chunk_handle);
+    if ( lease != lease_info_.end() ) { // 直接返回
+
+    }else { // 指定某个chunk server为当前chunk_handle的primary副本
+
+    }
+  }
+
+
 }
 
 

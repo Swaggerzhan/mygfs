@@ -14,6 +14,7 @@
 namespace gfs {
 
 class ChunkServerClient;
+struct ChunkServerInfo;
 
 typedef std::vector<ChunkServerClient*> ChunkServerClientPtrs;
 
@@ -37,6 +38,20 @@ public:
                       const FileRouteInfoArgs* args,
                       FileRouteInfoReply* reply,
                       google::protobuf::Closure* done) override;
+
+  /*
+   * 找出当前Master所记录的Lease
+   */
+  void FindLeaseHolder(google::protobuf::RpcController* cntl,
+                       const FindLeaseHolderArgs* args,
+                       FindLeaseHolderReply* reply,
+                       google::protobuf::Closure* done) override;
+
+private:
+
+
+
+
 
   // ******************* DEBUG ************************
 
@@ -64,6 +79,7 @@ private:
   // route -> chunk server
   std::map<std::string, ChunkClient*> chunk_servers_;
 
+  RWLOCK lease_info_rw_lock_;
   // UUID -> 获得Lease的服务器，每个chunk都有一个id标识
   std::map<uint64_t, uint64_t> lease_info_;
 

@@ -92,6 +92,18 @@ service ChunkServer {
 
   rpc InitChunk (InitChunkArgs) returns (InitChunkReply);
 
+  rpc MarkPrimaryChunk (MarkPrimaryChunkArgs)
+      returns (MarkPrimaryChunkReply);
+
+};
+
+message MarkPrimaryChunkArgs {
+  required uint64 chunk_handle = 1;
+  required uint64 expired = 2; // 过期绝对时间
+};
+
+message MarkPrimaryChunkReply {
+  required int32 state = 1;
 };
 
 

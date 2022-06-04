@@ -11,7 +11,7 @@
 namespace gfs {
 
 int Page::kProt_ = PROT_READ | PROT_WRITE;
-int Page::kFlags_ = MAP_PRIVATE;
+int Page::kFlags_ = MAP_SHARED;
 
 Page::Page()
 : mem_(nullptr)
@@ -61,7 +61,8 @@ const char* Page::read_expose() {
 }
 
 void Page::flush() {
-  msync(mem_, CHUNK_SIZE, kFlags_);
+  int ret = msync(mem_, CHUNK_SIZE, kFlags_);
+  assert ( ret == 0 );
 }
 
 }; // namespace gfs

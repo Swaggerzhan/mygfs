@@ -158,6 +158,7 @@ message HeartBeatArgs {
 
 message HeartBeatReply {
   required int32 echo = 1;
+  optional int32 id = 2;
 };
 
 message InitChunkArgs {

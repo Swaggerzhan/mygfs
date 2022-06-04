@@ -48,6 +48,9 @@ public:
 
   ChunkHandleWeakPtr chunk_info;
 
+  // used for tmp cache
+  int64_t length;
+
 private:
   bool valid_;
   bool has_modify_;

@@ -21,6 +21,17 @@ public:
                  ReadChunkReply* reply,
                  google::protobuf::Closure* done) override;
 
+  void PutData(google::protobuf::RpcController* cntl,
+               const PutDataArgs* args,
+               PutDataReply* reply,
+               google::protobuf::Closure* done) override;
+
+  void WriteChunk(google::protobuf::RpcController* cntl,
+                  const WriteChunkArgs* args,
+                  WriteChunkReply* reply,
+                  google::protobuf::Closure* done) override;
+
+
   // Master call rpc
   void HeartBeat(google::protobuf::RpcController* cntl,
                  const HeartBeatArgs* args,
@@ -31,6 +42,11 @@ public:
                  const InitChunkArgs* args,
                  InitChunkReply* reply,
                  google::protobuf::Closure* done) override;
+
+  void MarkPrimaryChunk (google::protobuf::RpcController* cntl,
+                         const MarkPrimaryChunkArgs* args,
+                         MarkPrimaryChunkReply* reply,
+                         google::protobuf::Closure* done) override;
 
 
   // *********************** DEBUG ***************************

@@ -127,9 +127,8 @@ message ReadChunkReply {
 
 message PutDataArgs {
   optional int64 client_id = 1; // TODO:impl
-  required uint64 time_sec = 2; // sec
-  required uint64 time_nano = 3; // nano sec
-  required bytes data = 4;
+  required uint64 timestamp = 2; // timestamp millsecond
+  required bytes data = 3;
 };
 
 message PutDataReply {
@@ -139,10 +138,10 @@ message PutDataReply {
 
 message WriteChunkArgs {
   required uint64 client_id = 1;
-  required uint64 second = 2;
-  required uint64 nano_sec = 3;
+  required uint64 timestamp = 2;
+  optional uint32 version = 3;
   required uint64 chunk_handle = 4; // 写入的chunk UUID
-  required uint64 offset = 5; // 在chunk中的offset位置进行写入
+  required int64 offset = 5; // 在chunk中的offset位置进行写入
   repeated string secondaries_route = 6; // 其他副本
   optional uint64 tmp_data_offset = 7; // 保留
 };

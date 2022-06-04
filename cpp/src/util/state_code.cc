@@ -4,11 +4,12 @@
 #include "state_code.h"
 
 
-static std::string storage_state_code[4] = {
+static std::string storage_state_code[5] = {
         "state_ok",
         "state_err",
         "state_file_not_found",
         "state_file_chunk_index_err",
+        "state_length_err",
 };
 
 

@@ -56,7 +56,9 @@ DiskManager::DiskManager(int port)
 {
   root_ += GFS_CHUNK_SERVER_ROOT_DIR;
   root_ += std::to_string(port) + "/";
+  tmp_dir_ = root_ + "tmp/";
   LOG(INFO) << "chunk server root at: " << root_;
+  LOG(INFO) << "chunk server tmp at: " << tmp_dir_;
 }
 
 
@@ -64,7 +66,7 @@ bool DiskManager::fetch_chunk(uint64_t chunk_handle, uint32_t version, PagePtr& 
   // 获取chunk 信息
   ChunkHandlePtr chunk_info_ptr;
   {
-    ReadLockGuard guard(&chunks_rw_lock_);
+    std::unique_lock<std::mutex> guard(chunks_mutex_);
     auto it = chunks_.find(chunk_handle);
     if ( it == chunks_.end() ) {
       return false;
@@ -89,6 +91,7 @@ bool DiskManager::fetch_chunk(uint64_t chunk_handle, uint32_t version, PagePtr& 
 
 
 bool DiskManager::create_chunk(uint64_t chunk_handle, uint32_t version) {
+  std::unique_lock<std::mutex> guard(chunks_mutex_);
   // 检测是否已经存在
   if ( chunks_.find(chunk_handle) != chunks_.end() ) {
     return false;
@@ -104,6 +107,62 @@ bool DiskManager::create_chunk(uint64_t chunk_handle, uint32_t version) {
   assert (chmod(path.c_str(), file_per) == 0 );
   chunks_[chunk_handle] = ptr;
   return true;
+}
+
+bool DiskManager::mark_as_primary(uint64_t chunk_handle, uint32_t version, uint64_t lease) {
+  std::unique_lock<std::mutex> guard(chunks_mutex_);
+  auto it = chunks_.find(chunk_handle);
+  if ( it== chunks_.end() ) { // chunk不存在
+    return false;
+  }
+  it->second->lease = lease;
+  it->second->version = version; // TODO: impl version
+  return true;
+}
+
+bool DiskManager::store_tmp_data(int64_t client_id, uint64_t time, const char *data, int len) {
+  std::unique_lock<std::mutex> guard(tmp_mutex_);
+  store_mark_t key(client_id, time);
+  auto it = tmp_cache_.find(key);
+  if ( it != tmp_cache_.end() ) { // has existed!
+    return false;
+  }
+  std::string path = tmp_dir_ + std::to_string(client_id) + std::to_string(time);
+  PagePtr ptr(new Page);
+  bool ret = ptr->init(path);
+  assert ( ret == true );
+  char* mem = ptr->write_expose();
+  memcpy(mem, data, len);
+  ptr->flush(); // 保存至磁盘中 TODO: 索引持久化？
+  ptr->length = len;
+  LOG(INFO) << "tmp data store ok client id: " << client_id << " time: " << time;
+  return true;
+}
+
+state_code DiskManager::write_chunk_commit(uint64_t client_id, uint64_t time,
+                                           uint64_t chunk_handle, uint32_t version, int64_t offset) {
+  PagePtr tmp_ptr;
+  {
+    std::unique_lock<std::mutex> guard(tmp_mutex_);
+    auto it = tmp_cache_.find(store_mark_t(client_id, time));
+    if ( it == tmp_cache_.end() ) {
+      return state_file_not_found; // tmp cache 找不到
+    }
+    tmp_ptr = it->second;
+  }
+  PagePtr target_ptr;
+  if ( !fetch_chunk(chunk_handle, version, target_ptr) ) {
+    return state_file_not_found; // chunk_handle找不到
+  }
+  if ( offset + tmp_ptr->length > CHUNK_SIZE ) {
+    return state_length_err;  // chunk写不下 TODO: 截断，下一次写入从这次没写完的位置开始写
+  }
+  const char* src = tmp_ptr->read_expose();
+  char* dst = target_ptr->write_expose() + offset; // 写入目标区域
+  memcpy(dst, src, tmp_ptr->length);
+  target_ptr->flush(); // 刷到磁盘中
+  // TODO: 删除tmp_cache
+  return state_ok;
 }
 
 
@@ -145,7 +204,6 @@ void DiskManager::padding_debug_chunk() {
     mem[i] = '2';
   }
   ptr->flush();
-
 }
 
 };

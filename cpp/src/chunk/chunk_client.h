@@ -16,9 +16,23 @@ public:
   ChunkClient(const std::string& route);
   ~ChunkClient();
 
+  /*
+   * 初始化channel
+   */
   bool init();
 
   std::string name();
+
+  /*
+   * @return: 当前路由信息
+   */
+  std::string route();
+
+  /*
+   * 得到服务器的chunk server id
+   * @return: chunk server id，-1为失败
+   */
+  int id();
 
   bool connected();
 
@@ -39,7 +53,12 @@ public:
 
 
   // ********** for master ***********
-  bool heartbeat();
+
+  /*
+   * 检测和chunk server的连接情况
+   * @return: 返回chunk server的id，-1为连接中断
+   */
+  int heartbeat();
 
   /*
    * 在chunk server上生成一个新的chunk

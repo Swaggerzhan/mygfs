@@ -34,6 +34,14 @@ std::string ChunkClient::name() {
   return route_;
 }
 
+std::string ChunkClient::route() {
+  return route_;
+}
+
+int ChunkClient::id() {
+  return heartbeat();
+}
+
 bool ChunkClient::connected() {
   return connected_.load(std::memory_order_relaxed);
 }
@@ -81,7 +89,7 @@ int64_t ChunkClient::read_chunk(uint64_t chunk_handle, uint32_t version,
 }
 
 // ************************** Master call rpc *****************************
-bool ChunkClient::heartbeat() {
+int ChunkClient::heartbeat() {
   if ( !connected_.load(std::memory_order_relaxed) ) {
     LOG(ERROR) << "channel disconnected at route: " << route_;
     return -1;
@@ -93,12 +101,12 @@ bool ChunkClient::heartbeat() {
 
   ChunkServer_Stub stub(&channel_);
   stub.HeartBeat(&cntl, &args, &reply, nullptr);
-  if ( cntl.Failed() || reply.echo() != 1) {
+  if ( cntl.Failed() || reply.echo() == -1) {
     LOG(ERROR) << "heartbeat failed at route: " << route_ << " because: " << cntl.ErrorText();
     connected_.store(false, std::memory_order_relaxed);
-    return false;
+    return -1;
   }
-  return true;
+  return reply.id();
 }
 
 bool ChunkClient::init_chunk(uint64_t chunk_handle) {

@@ -6,22 +6,39 @@
 #define MYGFS_DISK_MANAGER_H
 
 #include "src/util/state_code.h"
+#include "src/util/lock.h"
+#include "src/util/time.h"
+#include "src/util/lru.hpp"
+#include "page.h"
 
 namespace gfs {
+
+struct ChunkHandle;
+typedef std::shared_ptr<ChunkHandle> ChunkHandlePtr;
 
 class DiskManager {
 public:
 
-  DiskManager(int port);
+  explicit DiskManager(int port);
   ~DiskManager() = default;
 
 
   /*
-   * delete by caller for now
-   * TODO: delete by callee
+   * 获取chunk，chunk将以PagePtr形式展现，可以通过对page写入来
+   * 对真实的磁盘进行写入，page采用LRU缓存，但PagePtr是shared_ptr
+   * 最后一个释放的人负责对page的更新刷入磁盘
+   * @param chunk_handle : UUID
+   * @param version: TODO:impl
+   * @param ptr: 需要获取的page指针
+   * @return: true为成功
    */
-  char* fetch_chunk(uint64_t chunk_handle, uint32_t version, uint64_t* chunk_size);
+  bool fetch_chunk(uint64_t chunk_handle, uint32_t version, PagePtr& ptr);
 
+
+  /*
+   * 创建一个chunk_handle
+   *
+   */
   bool create_chunk(uint64_t chunk_handle, uint32_t version);
 
   // *************************** DEBUG **********************************
@@ -31,9 +48,17 @@ public:
 
 private:
 
-  // TODO: LRU
   int port_;
   std::string root_;
+
+
+  RWLOCK chunks_rw_lock_;
+  // chunk handle:UUID -> struct chunk handle
+  std::map<uint64_t, ChunkHandlePtr> chunks_;
+
+
+  std::mutex cache_mutex_;
+  LRU<uint64_t, PagePtr> cache_;
 
 
 };

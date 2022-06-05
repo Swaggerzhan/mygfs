@@ -18,6 +18,19 @@ public:
 
   bool init();
 
+  /**
+   * @brief 向MasterServer 请求并创建一个文件
+   * @param filename 需要创建的文件名字
+   * @param chunk_handle 创建文件后得到的第一个chunk_handle信息
+   * @param primary_route 得到的primary 副本路由信息
+   * @param secondaries_routes 其余的副本路由信息
+   * @return true为成功
+   */
+  bool create_file(const std::string& filename,
+                   uint64_t& chunk_handle,
+                   std::string& primary_route,
+                   std::vector<std::string>& secondaries_routes);
+
   /*
    * 列出当前目录下存在的所有文件
    * TODO: list

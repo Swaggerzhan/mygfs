@@ -10,6 +10,7 @@
 #include "src/util/lock.h"
 #include "proto/out/gfs.pb.h"
 #include "src/chunk/chunk_client.h"
+#include "src/master/file_info.h"
 
 namespace gfs {
 
@@ -17,7 +18,7 @@ class ChunkServerClient;
 struct ChunkServerInfo;
 
 typedef std::vector<ChunkServerClient*> ChunkServerClientPtrs;
-
+typedef std::shared_ptr<FileInfo> FileInfoPtr;
 
 class MasterServerImpl : public MasterServer {
 public:
@@ -27,6 +28,18 @@ public:
 
   MasterServerImpl();
   ~MasterServerImpl();
+
+  /**
+   * @brief 创建文件，返回一个chunk_handle的路由信息，类似FindLeaseHolder的响应
+   * @param cntl
+   * @param args
+   * @param reply
+   * @param done
+   */
+  void CreateFile (google::protobuf::RpcController* cntl,
+                   const CreateFileArgs* args,
+                   CreateFileReply* reply,
+                   google::protobuf::Closure* done) override;
 
   void ListFiles (google::protobuf::RpcController* cntl,
                   const ListFilesArgs* args,
@@ -39,24 +52,19 @@ public:
                       FileRouteInfoReply* reply,
                       google::protobuf::Closure* done) override;
 
-  /*
-   * 找出当前Master所记录的Lease
+  /**
+   * @brief 找出当前Master所记录的Lease
    */
   void FindLeaseHolder(google::protobuf::RpcController* cntl,
                        const FindLeaseHolderArgs* args,
                        FindLeaseHolderReply* reply,
                        google::protobuf::Closure* done) override;
 
-private:
-
-
-
-
 
   // ******************* DEBUG ************************
 
-  /*
-   * 以debug的形式启动Master服务器
+  /**
+   * @brief 以debug的形式启动Master服务器
    */
   void start_debug();
   /*
@@ -66,22 +74,20 @@ private:
 
 
 private:
+  std::mutex files_mutex_;
+  std::map<std::string, FileInfoPtr> files_;
 
 
-  RWLOCK files_rw_lock_;
-  // 文件名 -> 对应文件的chunk UUID名
-  std::map<std::string, std::vector<uint64_t>> files_;
-
-  RWLOCK chunk_info_rw_lock_;
-  // UUID -> 保存此UUID的chunk server
-  std::map<uint64_t, std::vector<std::string>> chunk_route_info_;
-
-  // route -> chunk server
-  std::map<std::string, ChunkClient*> chunk_servers_;
-
-  RWLOCK lease_info_rw_lock_;
-  // UUID -> 获得Lease的服务器，每个chunk都有一个id标识
-  std::map<uint64_t, uint64_t> lease_info_;
+//  RWLOCK chunk_info_rw_lock_;
+//  // UUID -> 保存此UUID的chunk server
+//  std::map<uint64_t, std::vector<std::string>> chunk_route_info_;
+//
+//  // route -> chunk server
+//  std::map<std::string, ChunkClient*> chunk_servers_;
+//
+//  RWLOCK lease_info_rw_lock_;
+//  // UUID -> 获得Lease的服务器，每个chunk都有一个id标识
+//  std::map<uint64_t, uint64_t> lease_info_;
 
 };
 

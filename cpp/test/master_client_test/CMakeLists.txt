@@ -17,6 +17,8 @@ set(MASTER_CLIENT_SOURCE_FILES
         ${CMAKE_SOURCE_DIR}/src/chunk/chunk_client.cc
         ${CMAKE_SOURCE_DIR}/src/master/master_client.h
         ${CMAKE_SOURCE_DIR}/src/master/master_client.cc
+        ${CMAKE_SOURCE_DIR}/src/master/chunk_route.h
+        ${CMAKE_SOURCE_DIR}/src/master/chunk_route.cc
         )
 
 set(UTIL_SOURCE_FILES

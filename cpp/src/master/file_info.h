@@ -16,22 +16,36 @@
 namespace gfs {
 
 struct ChunkInfo;
-
-typedef std::unique_ptr<ChunkInfo> ChunkInfoPtr;
+typedef std::shared_ptr<ChunkInfo> ChunkInfoPtr;
 
 class FileInfo {
 public:
 
   FileInfo(const std::string &filename);
 
-  /*
-   *  通过chunk_index来获取当前文件的信息
+  ~FileInfo() = default;
+
+  /**
+   * @brief 创建一个新的chunk，在文件初始化的时候调用
+   * @param reply
+   * @return: true 为成功
+   */
+  bool init(CreateFileReply* reply);
+
+  /**
+   *  @brief 通过chunk_index来获取当前文件的信息
+   *  @param chunk_index: 文件对应的chunk_index
+   *  @param reply: RPC响应
+   *  @return: true 为成功
    */
   bool read_info(uint32_t chunk_index, FileRouteInfoReply* reply);
 
-  /*
-   * 同样通过chunk_index来获取文件信息，但需要找到一个primary
+  /**
+   * @brief 同样通过chunk_index来获取文件信息，但需要找到一个primary
    * 如果没有，那就生成一个
+   * @param chunk_index: 文件对应的chunk_index
+   * @param reply: RPC响应
+   * @return: true 为成功
    */
   bool write_info(uint32_t chunk_index, FindLeaseHolderReply* reply);
 
@@ -47,10 +61,11 @@ private:
 
 private:
 
+  std::string filename_;
 
-  RWLOCK chunks_rw_lock_;
+  std::mutex chunks_mutex_;
   // chunk_index -> chunk info
-  std::map<uint32_t, ChunkInfo> chunks_;
+  std::map<uint32_t, ChunkInfoPtr> chunks_;
 
 
 };

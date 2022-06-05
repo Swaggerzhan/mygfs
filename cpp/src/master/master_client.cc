@@ -28,6 +28,41 @@ bool MasterClient::init() {
   return true;
 }
 
+bool MasterClient::create_file(const std::string &filename,
+                               uint64_t& chunk_handle,
+                               std::string &primary_route,
+                               std::vector<std::string> &secondaries_routes) {
+  if ( !connected_.load(std::memory_order_relaxed) ) {
+    LOG(ERROR) << "not connect to: " << route_ << " yet!";
+    return false;
+  }
+
+  brpc::Controller cntl;
+  CreateFileArgs args;
+  CreateFileReply reply;
+  args.set_filename(filename);
+
+  MasterServer_Stub stub(&channel_);
+  stub.CreateFile(&cntl, &args, &reply, nullptr);
+
+  if ( cntl.Failed() ) {
+    LOG(ERROR) << "create_file failed at: " << route_;
+    if ( cntl.IsCloseConnection() ) {
+      connected_.store(false, std::memory_order_relaxed);
+    }
+    return false;
+  }
+  if ( reply.state() != state_ok ) {
+    return false;
+  }
+  chunk_handle = reply.chunk_handle();
+  primary_route = reply.primary_route();
+  for (auto& r : reply.routes()) {
+    secondaries_routes.push_back(r);
+  }
+  return true;
+}
+
 
 bool MasterClient::list_file(std::vector<std::string> &ret) {
   if ( !connected_.load(std::memory_order_relaxed) ) {

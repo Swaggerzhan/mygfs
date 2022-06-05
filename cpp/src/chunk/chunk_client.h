@@ -83,8 +83,10 @@ public:
    */
   int heartbeat();
 
-  /*
-   * 在chunk server上生成一个新的chunk
+  /**
+   * @brief 在chunk server上生成一个新的chunk
+   * @param chunk_handle: 需要创建的chunk_handle
+   * TODO: mark primary
    */
   bool init_chunk(uint64_t chunk_handle);
 
@@ -100,11 +102,5 @@ private:
 
 };
 
-
-
 };
-
-
-
-
 #endif //MYGFS_CHUNK_CLIENT_H

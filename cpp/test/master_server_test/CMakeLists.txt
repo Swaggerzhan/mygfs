@@ -17,6 +17,10 @@ set(MASTER_SERVER_SOURCE_FILES
         ${CMAKE_SOURCE_DIR}/src/chunk/chunk_client.cc
         ${CMAKE_SOURCE_DIR}/src/master/master_server.h
         ${CMAKE_SOURCE_DIR}/src/master/master_server.cc
+        ${CMAKE_SOURCE_DIR}/src/master/file_info.h
+        ${CMAKE_SOURCE_DIR}/src/master/file_info.cc
+        ${CMAKE_SOURCE_DIR}/src/master/chunk_route.h
+        ${CMAKE_SOURCE_DIR}/src/master/chunk_route.cc
         )
 
 set(UTIL_SOURCE_FILES
@@ -25,6 +29,8 @@ set(UTIL_SOURCE_FILES
         ${CMAKE_SOURCE_DIR}/src/util/lock.cc
         ${CMAKE_SOURCE_DIR}/src/util/state_code.h
         ${CMAKE_SOURCE_DIR}/src/util/state_code.cc
+        ${CMAKE_SOURCE_DIR}/src/util/time.h
+        ${CMAKE_SOURCE_DIR}/src/util/time.cc
         )
 
 

@@ -4,6 +4,7 @@
 #include "time.h"
 #include <sys/time.h>
 
+namespace gfs {
 static uint64_t kSecond2MillSecond = 1000;
 
 uint64_t get_lease_time() {
@@ -18,4 +19,12 @@ bool is_expired(uint64_t lease) {
   uint64_t now = t.tv_sec * kSecond2MillSecond + t.tv_usec;
   return now >= lease;
 }
+
+uint64_t now() {
+  timeval t{};
+  gettimeofday(&t, nullptr);
+  return t.tv_sec * kSecond2MillSecond + t.tv_usec;
+}
+
+}; // namespace gfs
 

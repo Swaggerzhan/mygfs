@@ -17,7 +17,7 @@ int main(int argc, char** args) {
   int port = std::stoi(args[1]);
   gfs::ChunkServerImpl chunk_server(port);
 
-  chunk_server.start_debug();
+  //chunk_server.start_debug();
 
   brpc::Server server;
 

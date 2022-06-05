@@ -26,12 +26,7 @@
 namespace gfs {
 
 static int file_per = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
-static char garbage = '\0';
-static void padding_garbage(int fd) {
-  for (int i=0; i<CHUNK_SIZE; ++i) {
-    ::write(fd, &garbage, 1);
-  }
-}
+
 
 struct ChunkHandle {
 public:
@@ -102,9 +97,10 @@ bool DiskManager::create_chunk(uint64_t chunk_handle, uint32_t version) {
   if ( fd < 0 ) {
     return false;
   }
-  padding_garbage(fd);
+  Page::padding_garbage(fd);
   close(fd);
-  assert (chmod(path.c_str(), file_per) == 0 );
+  int ret = chmod(path.c_str(), file_per);
+  assert ( ret == 0 );
   chunks_[chunk_handle] = ptr;
   return true;
 }

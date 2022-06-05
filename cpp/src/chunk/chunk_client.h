@@ -13,7 +13,7 @@ namespace gfs {
 class ChunkClient {
 public:
 
-  ChunkClient(const std::string& route);
+  ChunkClient(const std::string& route, int chunk_client_id = rand());
   ~ChunkClient();
 
   /*
@@ -34,11 +34,16 @@ public:
    */
   int id();
 
+  /*
+   * 客户端ID
+   */
+  int self_id();
+
   bool connected();
 
   // ********** for client ***********
 
-  /*
+  /**
    * @param chunk_handle: chunk的UUID
    * @param version: chunk版本
    * @param buf: 读取时的缓冲区，由调用者提供
@@ -49,6 +54,24 @@ public:
   int64_t read_chunk(uint64_t chunk_handle, uint32_t version, char* buf,
                 int64_t offset, int64_t length);
 
+  /**
+   * @brief 将数据缓存至chunk server，为之后的write_chunk做准备
+   * @param timestamp: 时间
+   * @param data: 数据内容
+   * @return: true 为成功
+   */
+  bool put_data(uint64_t timestamp, const std::string& data);
+
+  /**
+   * @brief 将之前put_data缓存的数据提交到真正的chunk_handle中
+   * @param timestamp: put_data时的时间戳
+   * @param version: TODO:
+   * @param chunk_handle: 需要写入的chunk_handle, UUID
+   * @param offset: 需要写入的chunk_handle中的位置
+   * @return int64_t: 写入的长度，负数为错误
+   */
+  int64_t write_chunk_commit(uint64_t timestamp, uint32_t version,
+                             uint64_t chunk_handle, int64_t offset);
 
 
 
@@ -71,6 +94,9 @@ private:
   std::string route_;
 
   std::atomic<bool> connected_;
+
+  int chunk_server_id_; // for id
+  int chunk_client_id_; // for self_id
 
 };
 

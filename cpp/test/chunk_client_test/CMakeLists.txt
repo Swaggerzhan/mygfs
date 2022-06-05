@@ -23,6 +23,8 @@ set(GLOBAL_UTIL_SOURCE_FILES
         ${CMAKE_SOURCE_DIR}/src/util/lock.cc
         ${CMAKE_SOURCE_DIR}/src/util/state_code.h
         ${CMAKE_SOURCE_DIR}/src/util/state_code.cc
+        ${CMAKE_SOURCE_DIR}/src/util/time.h
+        ${CMAKE_SOURCE_DIR}/src/util/time.cc
         )
 
 

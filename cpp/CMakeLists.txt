@@ -45,13 +45,13 @@ message("****************************************************")
 include_directories(${GLOBAL_BRPC_INCLUDE_DIR})
 include_directories(${CMAKE_SOURCE_DIR})
 
-
 add_subdirectory(test/init)
 add_subdirectory(test/chunk_server_test)
 add_subdirectory(test/chunk_client_test)
 add_subdirectory(test/master_server_test)
 add_subdirectory(test/master_client_test)
 add_subdirectory(test/gfs_test)
+add_subdirectory(test/page_test)
 
 aux_source_directory(proto/out PROTOBUF_SOURCE_FILES)
 aux_source_directory(src/master MASTER_SOURCE_FILES)
@@ -77,8 +77,6 @@ set(GLOBAL_UTIL_SOURCE_FILES
         ${PROJECT_SOURCE_DIR}/src/util/state_code.cc
         )
 
-
-
 add_library(${NAME}
         STATIC
         ${PROTOBUF_SOURCE_FILES}
@@ -87,7 +85,3 @@ add_library(${NAME}
         ${UTIL_SOURCE_FILES}
         ${GFS_SOURCE_FILES}
         )
-
-
-
-

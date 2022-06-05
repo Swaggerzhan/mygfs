@@ -17,6 +17,8 @@ set(GLOBAL_CHUNK_SERVER_SOURCE_FILES
         ${CMAKE_SOURCE_DIR}/src/chunk/chunk_server.cc
         ${CMAKE_SOURCE_DIR}/src/chunk/disk_manager.h
         ${CMAKE_SOURCE_DIR}/src/chunk/disk_manager.cc
+        ${CMAKE_SOURCE_DIR}/src/chunk/page.h
+        ${CMAKE_SOURCE_DIR}/src/chunk/page.cc
         )
 
 set(GLOBAL_UTIL_SOURCE_FILES
@@ -25,6 +27,9 @@ set(GLOBAL_UTIL_SOURCE_FILES
         ${CMAKE_SOURCE_DIR}/src/util/lock.cc
         ${CMAKE_SOURCE_DIR}/src/util/state_code.h
         ${CMAKE_SOURCE_DIR}/src/util/state_code.cc
+        ${CMAKE_SOURCE_DIR}/src/util/lru.hpp
+        ${CMAKE_SOURCE_DIR}/src/util/time.h
+        ${CMAKE_SOURCE_DIR}/src/util/time.cc
         )
 
 

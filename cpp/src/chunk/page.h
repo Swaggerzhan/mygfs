@@ -27,6 +27,8 @@ public:
   Page();
   ~Page();
 
+  static void padding_garbage(int fd);
+
   bool init(const std::string& path);
 
   /*

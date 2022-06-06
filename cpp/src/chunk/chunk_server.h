@@ -26,6 +26,11 @@ public:
                PutDataReply* reply,
                google::protobuf::Closure* done) override;
 
+  void AppendChunk(google::protobuf::RpcController* cntl,
+                   const AppendChunkArgs* args,
+                   AppendChunkReply* reply,
+                   google::protobuf::Closure* done) override;
+
   void WriteChunk(google::protobuf::RpcController* cntl,
                   const WriteChunkArgs* args,
                   WriteChunkReply* reply,

@@ -10,6 +10,10 @@
 
 namespace gfs {
 
+class ChunkClient;
+
+typedef std::shared_ptr<ChunkClient> ChunkClientPtr;
+
 class ChunkClient {
 public:
 
@@ -72,6 +76,17 @@ public:
    */
   int64_t write_chunk_commit(uint64_t timestamp, uint32_t version,
                              uint64_t chunk_handle, int64_t offset);
+
+  /**
+   * @brief 将之前put_data缓存的数据追加到真正的chunk_handle中
+   * @param timestamp: PutData时的时间戳
+   * @param version: TODO
+   * @param chunk_handle: chunk
+   * @param tmp_data_offset: 临时tmp data的偏移
+   * @return: 真实的写入长度
+   */
+  int64_t append_commit(uint64_t timestamp, uint32_t version,
+                        uint64_t chunk_handle, int64_t tmp_data_offset);
 
 
 

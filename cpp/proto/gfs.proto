@@ -31,6 +31,7 @@ service MasterServer {
   // 2. chunk不存在，那么Master会创建，然后选出primary
   rpc FindLeaseHolder (FindLeaseHolderArgs) returns (FindLeaseHolderReply);
 
+
   rpc AddChunk (AddChunkArgs) returns (AddChunkReply) ;
 };
 
@@ -57,7 +58,7 @@ message ListFilesReply {
 
 message FileRouteInfoArgs {
   required string filename = 1;
-  required uint64 chunk_index = 2;
+  required uint32 chunk_index = 2;
 };
 
 message FileRouteInfoReply {
@@ -67,23 +68,30 @@ message FileRouteInfoReply {
 };
 
 message AddChunkArgs {
-
+  required string filename = 1;
 };
 
 message AddChunkReply {
-
+  required int32 state = 1;
+  optional uint64 chunk_handle = 2;
+  optional uint32 version = 3;
+  optional string primary = 4;
+  repeated string secondaries = 5;
 };
 
 message FindLeaseHolderArgs {
   required string filename = 1;
-  required uint32 chunk_index = 2;
+  optional uint32 chunk_index = 2;
+  required bool last = 3; // 直接找到最后一块chunk
 };
 
 message FindLeaseHolderReply {
   required int32 state = 1;
   optional uint64 chunk_handle = 2;
-  repeated string routes = 3; // 其他副本路由
-  optional string primary_route = 4; // 主副本路由
+  optional uint32 version = 3;
+  optional string primary = 4;
+  repeated string secondaries = 5;
+  optional uint32 chunk_index = 6;
 };
 
 
@@ -104,6 +112,11 @@ service ChunkServer {
   rpc PutData (PutDataArgs) returns (PutDataReply);
 
 
+  // AppendChunk同样是将PutData中的数据提交至对应的chunk_handle中
+  //
+  rpc AppendChunk (AppendChunkArgs) returns (AppendChunkReply);
+
+
   // for master call
 
   // Master测试chunk server是否存活
@@ -114,6 +127,19 @@ service ChunkServer {
   rpc MarkPrimaryChunk (MarkPrimaryChunkArgs)
       returns (MarkPrimaryChunkReply);
 
+};
+
+message AppendChunkArgs {
+  optional int64 client_id = 1;
+  required uint64 timestamp = 2;
+  optional int64 tmp_data_offset = 3; // 临时缓存中起步位置
+  repeated string secondaries = 4;
+  required uint64 chunk_handle = 5;
+};
+
+message AppendChunkReply {
+  required int32 state = 1;
+  required int64 bytes_written = 2;
 };
 
 message MarkPrimaryChunkArgs {
@@ -156,7 +182,7 @@ message PutDataReply {
 };
 
 message WriteChunkArgs {
-  required uint64 client_id = 1;
+  required int64 client_id = 1;
   required uint64 timestamp = 2;
   optional uint32 version = 3;
   required uint64 chunk_handle = 4; // 写入的chunk UUID

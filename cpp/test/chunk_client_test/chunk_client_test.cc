@@ -23,13 +23,19 @@ void basic_test();
  */
 void put_data_test();
 
+/**
+ * @brief 进行初始化chunk PutData, AppendChunk，ReadChunk的测试
+ */
+void write_read_test();
+
 
 
 int main() {
 
   // test_at_chunk_server_1();
   // basic_test();
-  put_data_test();
+  // put_data_test();
+  write_read_test();
 
 }
 
@@ -88,5 +94,37 @@ void put_data_test() {
   assert ( c.put_data(data1_time, data1));
   uint64_t data2_time = gfs::now();
   assert ( c.put_data(data2_time, data2));
+}
+
+
+void write_read_test() {
+  std::string data1;
+  std::string data2;
+  data1.reserve(CHUNK_SIZE);
+  data2.reserve(CHUNK_SIZE);
+  for (int i=0; i<CHUNK_SIZE; ++i) {
+    data1.push_back('1');
+    data2.push_back('2');
+  }
+  gfs::ChunkClient c(GFS_CHUNK_SERVER_1_ROUTE);
+  assert ( c.init() == true );
+  uint64_t data1_time = gfs::now();
+  assert ( c.put_data(data1_time, data1) );
+  uint64_t data2_time = gfs::now();
+  assert ( c.put_data(data2_time, data2) );
+
+  assert ( c.init_chunk(TEST_FILE_CHUNK_HANDLE_1) );
+  assert ( c.init_chunk(TEST_FILE_CHUNK_HANDLE_2) );
+
+  assert ( c.append_commit(data1_time, 1, TEST_FILE_CHUNK_HANDLE_1, 0) == CHUNK_SIZE );
+  assert ( c.append_commit(data2_time, 1, TEST_FILE_CHUNK_HANDLE_2, 0) == CHUNK_SIZE );
+
+  char* buf = new char[CHUNK_SIZE * 2 + 1];
+  buf[CHUNK_SIZE*2] = '\0';
+
+  assert ( c.read_chunk(TEST_FILE_CHUNK_HANDLE_1, 1, buf, 0, CHUNK_SIZE) == CHUNK_SIZE );
+  assert ( c.read_chunk(TEST_FILE_CHUNK_HANDLE_2, 1, buf + CHUNK_SIZE, 0, CHUNK_SIZE) == CHUNK_SIZE );
+  cout << buf << endl;
+  cout << "write read test OK" << endl;
 }
 

@@ -23,9 +23,8 @@ public:
   explicit DiskManager(int port);
   ~DiskManager() = default;
 
-
-  /*
-   * 获取chunk，chunk将以PagePtr形式展现，可以通过对page写入来
+  /**
+   * @brief 获取chunk，chunk将以PagePtr形式展现，可以通过对page写入来
    * 对真实的磁盘进行写入，page采用LRU缓存，但PagePtr是shared_ptr
    * 最后一个释放的人负责对page的更新刷入磁盘
    * @param chunk_handle : UUID
@@ -36,14 +35,14 @@ public:
   bool fetch_chunk(uint64_t chunk_handle, uint32_t version, PagePtr& ptr);
 
 
-  /*
+  /**
    * 创建一个chunk_handle
    *
    */
   bool create_chunk(uint64_t chunk_handle, uint32_t version);
 
-  /*
-   * 将某个chunk_handle标记为主要副本
+  /**
+   * @brief 将某个chunk_handle标记为主要副本
    * @param chunk_handle: 被标记的chunk
    * @param version: 设定为这个版本
    * @param lease: lease过期的时间
@@ -51,8 +50,8 @@ public:
    */
   bool mark_as_primary(uint64_t chunk_handle, uint32_t version, uint64_t lease);
 
-  /*
-   * 将数据进行临时的缓存，为之后的写入做准备
+  /**
+   * @brief 将数据进行临时的缓存，为之后的写入做准备
    * @param client_id: 执行缓存操作的客户端id
    * @param time: 缓存操作提交时的时间
    * @param data: 数据
@@ -62,8 +61,8 @@ public:
   bool store_tmp_data(int64_t client_id, uint64_t time, const char* data, int len);
 
 
-  /*
-   * 提交由PutData写入的数据
+  /**
+   * @brief 提交由PutData写入的数据
    * @param client_id: 客户端id
    * @param time: PutData缓存时的时间
    * @param chunk_handle: 将写入哪个chunk
@@ -74,8 +73,22 @@ public:
    *        state_length_error: 写入长度错误
    *        state_file_not_found: 写入的chunk_handle找不到，或者是tmp cache找不到
    */
-  state_code write_chunk_commit(uint64_t client_id, uint64_t time,
+  state_code write_chunk_commit(int64_t client_id, uint64_t time,
                                 uint64_t chunk_handle, uint32_t version, int64_t offset);
+
+  /**
+   * @brief 提交之前PutData中的临时数据至chunk_handle中，写不完则需要重新申请chunk
+   * @param client_id: 客户端id
+   * @param time: PutData时的时间戳
+   * @param chunk_handle: 需要写入的chunk
+   * @param version: TODO
+   * @param tmp_data_offset: 在临时数据中的偏移量
+   * @param bytes_written: 真实的写入量
+   * @return
+   */
+  state_code append_chunk(int64_t client_id, uint64_t time,
+                          uint64_t chunk_handle, uint32_t version,
+                          int64_t tmp_data_offset, int64_t& bytes_written);
 
   // *************************** DEBUG **********************************
 

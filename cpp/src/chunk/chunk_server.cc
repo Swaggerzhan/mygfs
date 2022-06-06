@@ -64,6 +64,24 @@ void ChunkServerImpl::PutData(google::protobuf::RpcController *cntl,
   reply->set_state(state_ok);
 }
 
+void ChunkServerImpl::AppendChunk(google::protobuf::RpcController *cntl,
+                                  const AppendChunkArgs *args,
+                                  AppendChunkReply *reply,
+                                  google::protobuf::Closure *done) {
+  brpc::ClosureGuard guard(done);
+  LOG(INFO)  << "AppendChunk...";
+  int64_t bytes_written;
+  state_code ret = disk_.append_chunk(args->client_id(),
+                                      args->timestamp(),
+                                      args->chunk_handle(), 1,
+                                      args->tmp_data_offset(),
+                                      bytes_written);
+  reply->set_state(ret);
+  reply->set_bytes_written(bytes_written);
+  LOG(INFO) << "append state: " << debug_string(ret) << " bytes written: " << bytes_written;
+  // TODO: commit to other chunk
+}
+
 void ChunkServerImpl::WriteChunk(google::protobuf::RpcController *cntl,
                                  const WriteChunkArgs *args,
                                  WriteChunkReply *reply,

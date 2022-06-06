@@ -287,4 +287,29 @@ message PutDataReply {
 
 PutData同样是给客户端调用的，通过这个rpc，客户端可以提前的将数据放到chunk server上，为之后的write/append做准备，它以客户端id和时间戳作为缓存名字。
 
+### 3. AppendChunk
+
+```protobuf
+service ChunkServer {
+    rpc AppendChunk (AppendChunkArgs) returns (AppendChunkReply);
+};
+message AppendChunkArgs {
+  optional int64 client_id = 1;
+  required uint64 timestamp = 2;
+  optional int64 tmp_data_offset = 3; // 临时缓存中起步位置
+  repeated string secondaries = 4;
+  required uint64 chunk_handle = 5;
+};
+
+message AppendChunkReply {
+  required int32 state = 1;
+  required int64 bytes_written = 2;
+};
+```
+
+AppendChunk通过客户端id和时间戳来找到临时缓存，在rpc请求中，携带了副本的路由信息，只有primary副本的chunk server会接受这个rpc请求，然后它通过其中携带的路由信息去找到其他chunk server，进而进行提交操作。
+
+ps: 这里并没有实现像gfs论文中的那种链式复制方式，而是由客户端直接向多个chunk server发起PutData rpc，所以本质上流量压力还是在客户端身上。
+
+
 </font>

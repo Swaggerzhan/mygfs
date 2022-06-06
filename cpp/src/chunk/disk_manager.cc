@@ -102,6 +102,7 @@ bool DiskManager::create_chunk(uint64_t chunk_handle, uint32_t version) {
   int ret = chmod(path.c_str(), file_per);
   assert ( ret == 0 );
   chunks_[chunk_handle] = ptr;
+  LOG(INFO) << "restore chunks_[" << chunk_handle << "]";
   return true;
 }
 
@@ -131,11 +132,13 @@ bool DiskManager::store_tmp_data(int64_t client_id, uint64_t time, const char *d
   memcpy(mem, data, len);
   ptr->flush(); // 保存至磁盘中 TODO: 索引持久化？
   ptr->length = len;
-  LOG(INFO) << "tmp data store ok client id: " << client_id << " time: " << time;
+  LOG(INFO) << "tmp data store ok client id: " << client_id << " time: " << time
+  << "\n" << "path: " << path;
+  tmp_cache_[key] = ptr;
   return true;
 }
 
-state_code DiskManager::write_chunk_commit(uint64_t client_id, uint64_t time,
+state_code DiskManager::write_chunk_commit(int64_t client_id, uint64_t time,
                                            uint64_t chunk_handle, uint32_t version, int64_t offset) {
   PagePtr tmp_ptr;
   {
@@ -158,6 +161,43 @@ state_code DiskManager::write_chunk_commit(uint64_t client_id, uint64_t time,
   memcpy(dst, src, tmp_ptr->length);
   target_ptr->flush(); // 刷到磁盘中
   // TODO: 删除tmp_cache
+  return state_ok;
+}
+
+state_code DiskManager::append_chunk(int64_t client_id, uint64_t time,
+                                     uint64_t chunk_handle, uint32_t version,
+                                     int64_t tmp_data_offset, int64_t& bytes_written) {
+  PagePtr tmp_ptr;
+  {
+    std::unique_lock<std::mutex> guard(tmp_mutex_);
+    auto it = tmp_cache_.find(store_mark_t(client_id, time));
+    if ( it == tmp_cache_.end() ) {
+      LOG(INFO) << "tmp data not found";
+      return state_file_not_found; // tmp cache 找不到
+    }
+    tmp_ptr = it->second;
+  }
+  PagePtr target_ptr;
+  if ( !fetch_chunk(chunk_handle, version, target_ptr) ) {
+    LOG(INFO) << "chunk_handle: " << chunk_handle << " not found";
+    return state_file_not_found; // chunk_handle找不到
+  }
+  // 临时数据的大小
+  int64_t tmp_data_length = tmp_ptr->length - tmp_data_offset;
+  const char* src = tmp_ptr->read_expose() + tmp_data_offset;
+  char* dst = target_ptr->write_expose();
+
+  int64_t chunk_free_length = target_ptr->length;
+  // 得到真实的写入大小
+  if ( chunk_free_length >= tmp_data_length ) {
+    bytes_written = tmp_data_length;
+  }else { // chunk不够，至多写入一个chunk剩余的空间
+    bytes_written = chunk_free_length;
+  }
+  memcpy(dst, src, bytes_written);
+  LOG(INFO) << "append commit to: " << chunk_handle
+  << " bytes_written: " << bytes_written;
+  target_ptr->flush();
   return state_ok;
 }
 

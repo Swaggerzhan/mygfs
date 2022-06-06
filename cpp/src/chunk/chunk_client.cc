@@ -167,6 +167,39 @@ int64_t ChunkClient::write_chunk_commit(uint64_t timestamp,
   return 1; // TODO: return length
 }
 
+int64_t ChunkClient::append_commit(uint64_t timestamp,
+                                   uint32_t version,
+                                   uint64_t chunk_handle,
+                                   int64_t tmp_data_offset) {
+  if ( !connected_.load(std::memory_order_relaxed) ) {
+    LOG(ERROR) << "channel disconnected at route: " << route_;
+    return -1;
+  }
+
+  brpc::Controller cntl;
+  AppendChunkArgs args;
+  AppendChunkReply reply;
+  args.set_client_id(chunk_client_id_);
+  args.set_chunk_handle(chunk_handle);
+  args.set_tmp_data_offset(tmp_data_offset);
+  args.set_timestamp(timestamp);
+
+  ChunkServer_Stub stub(&channel_);
+  stub.AppendChunk(&cntl, &args, &reply, nullptr);
+
+  if ( cntl.Failed() ) {
+    LOG(ERROR) << "init chunk failed at route: " << route_ << " because: " << cntl.ErrorText();
+    if (cntl.IsCloseConnection()) {
+      connected_.store(false, std::memory_order_relaxed);
+    }
+    return false;
+  }
+  if ( reply.state() != state_ok ) {
+    return -1;
+  }
+  return reply.bytes_written();
+}
+
 // ************************** Master call rpc *****************************
 int ChunkClient::heartbeat() {
   if ( !connected_.load(std::memory_order_relaxed) ) {

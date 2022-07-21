@@ -37,23 +37,30 @@ public:
    */
   bool list_file(std::vector<std::string>& ret);
 
-  /*
-   * 根据文件名和文件index获取对应的路由信息
+  /**
+   * @brief 根据文件名和文件index获取对应的路由信息
    * 通常是由read操作之前调用，master不会区别对待副本是否持有Lease
    *  @param filename : 文件名
    *  @param chunk_index: 文件对应的chunk
    *  @param routes: 路由信息
    *  @param chunk_handle: chunk对应的UUID
    */
-  bool file_info_at(const std::string& filename, uint64_t chunk_index,
+  bool file_info_at(const std::string& filename, uint32_t chunk_index,
                     std::vector<std::string>& routes, uint64_t* chunk_handle);
 
-  /*
-   * 获取当前文件中所有chunk_index对应的UUID信息
-   */
-  bool file_info(const std::string& filename,
-                std::map<uint64_t, uint64_t>& chunks,
-                std::map<uint64_t, std::vector<std::string>>& routes);
+
+  bool append_info(const std::string& filename,
+                   std::string& primary,
+                   std::vector<std::string>& secondaries,
+                   uint32_t& chunk_index,
+                   uint64_t& chunk_handle);
+
+//  /*
+//   * 获取当前文件中所有chunk_index对应的UUID信息
+//   */
+//  bool file_info(const std::string& filename,
+//                std::map<uint32_t, uint64_t>& chunks,
+//                std::map<uint64_t, std::vector<std::string>>& routes);
 
 
   // ************** DEBUG ************************

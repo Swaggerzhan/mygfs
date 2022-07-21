@@ -15,9 +15,7 @@
 namespace gfs {
 
 class ChunkServerClient;
-struct ChunkServerInfo;
 
-typedef std::vector<ChunkServerClient*> ChunkServerClientPtrs;
 typedef std::shared_ptr<FileInfo> FileInfoPtr;
 
 class MasterServerImpl : public MasterServer {
@@ -74,20 +72,9 @@ public:
 
 
 private:
+
   std::mutex files_mutex_;
   std::map<std::string, FileInfoPtr> files_;
-
-
-//  RWLOCK chunk_info_rw_lock_;
-//  // UUID -> 保存此UUID的chunk server
-//  std::map<uint64_t, std::vector<std::string>> chunk_route_info_;
-//
-//  // route -> chunk server
-//  std::map<std::string, ChunkClient*> chunk_servers_;
-//
-//  RWLOCK lease_info_rw_lock_;
-//  // UUID -> 获得Lease的服务器，每个chunk都有一个id标识
-//  std::map<uint64_t, uint64_t> lease_info_;
 
 };
 

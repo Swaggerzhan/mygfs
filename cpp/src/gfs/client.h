@@ -8,20 +8,25 @@
 #include "src/chunk/chunk_client.h"
 #include "src/master/master_client.h"
 #include "src/util/lock.h"
+#include "context.h"
 
 namespace gfs {
 
-class FileContext;
-struct Context;
+// struct Context;
+// typedef std::shared_ptr<Context> ContextPtr;
 
 class Client {
 public:
 
-  /*
+  /**
    * @param route: MasterServer路由信息
    */
   Client(const std::string& route);
 
+  /**
+   * @brief 初始化Client，和MasterServer连接
+   * @return
+   */
   bool init();
 
 
@@ -35,45 +40,54 @@ public:
    */
   int64_t read(const std::string& filename, char* buf, int64_t length);
 
+  /**
+   * @brief 读取文件到buf中
+   * @param filename: 想要读取的文件
+   * @param buf: 读取的缓存地址
+   * @param length: 想要读取的长度
+   * @return: 真实读取长度，-1为失败
+   */
+  int64_t read2(const std::string& filename, char* buf, int64_t length);
+
+  /**
+   * @brief 对指定的文件追加数据
+   * @param filename: 文件名
+   * @param buf: 写入的数据
+   * @param length: 写入的长度
+   * @return: 真实的写入长度
+   */
+  int64_t append(const std::string& filename, char* buf, int64_t length);
+
 private:
 
-
-  // int64_t first_read(const std::string& filename, char* buf, int64_t length);
-
-  void make_context(const std::string& filename, FileContext** context_ret);
-
-  void update_chunk_server(std::vector<std::string>& routes);
-
-  ChunkClient* get_chunk_client(const std::string& route);
-
-
-  /*
-   * 获得文件的读取上下文，如果没有，那就创建一个
+  /**
+   * @brief 获得一个文件所对应的读写上下文，如果没有，那就创建一个
+   * @param filename: 文件名
+   * @param ptr: 读写上下文指针
+   * @return true 为成功
    */
-  Context* get_context(const std::string& filename);
+  bool get_context(const std::string& filename, ContextPtr& ptr);
 
-  /*
-   * 生成文件对应的上下文，一次fetch服务器上的所有信息
+  /**
+   * @brief 创建一个读写上下文
+   * @param filename: 文件名
+   * @param ptr: 上下文返回指针
+   * @return true 为成功
    */
-  bool make_context(const std::string& filename);
+  bool make_context(const std::string& filename, ContextPtr& ptr);
+
+
+  bool pick_read_chunk_ptr(const ContextPtr& ptr, uint32_t chunk_index,
+                           ChunkClientPtr& ret);
 
 
 private:
 
   MasterClient master_;
 
-  RWLOCK chunk_servers_rw_lock_;
-  // route -> chunk server
-  std::map<std::string, ChunkClient*> chunk_servers_;
-
-
-  RWLOCK file_context_map_rw_lock_;
-  // filename -> 文件读取上下文
-  std::map<std::string, FileContext*> file_context_map_;
-
-  RWLOCK context_rw_lock_;
+  std::mutex context_mutex_;
   // 当前正在读取的文件上下文
-  std::map<std::string, Context*> context_;
+  std::map<std::string, ContextPtr> context_;
 
 };
 

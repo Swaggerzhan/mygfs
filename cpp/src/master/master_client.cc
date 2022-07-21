@@ -99,7 +99,7 @@ bool MasterClient::list_file(std::vector<std::string> &ret) {
 }
 
 
-bool MasterClient::file_info_at(const std::string &filename, uint64_t chunk_index,
+bool MasterClient::file_info_at(const std::string &filename, uint32_t chunk_index,
                                 std::vector<std::string>& routes, uint64_t* chunk_handle) {
   if ( !connected_.load(std::memory_order_relaxed) ) {
     LOG(ERROR) << "not connect to: " << route_ << " yet!";
@@ -136,47 +136,84 @@ bool MasterClient::file_info_at(const std::string &filename, uint64_t chunk_inde
   return true;
 }
 
-bool MasterClient::file_info(const std::string &filename, std::map<uint64_t, uint64_t> &chunks,
-                             std::map<uint64_t, std::vector<std::string>> &routes) {
+bool MasterClient::append_info(const std::string &filename,
+                               std::string &primary,
+                               std::vector<std::string> &secondaries,
+                               uint32_t &chunk_index,
+                               uint64_t &chunk_handle) {
   if ( !connected_.load(std::memory_order_relaxed) ) {
     LOG(ERROR) << "not connect to: " << route_ << " yet!";
     return false;
   }
-
-  FileRouteInfoArgs args;
-  FileRouteInfoReply reply;
-  uint64_t chunk_index = 0;
+  brpc::Controller cntl;
+  FindLeaseHolderArgs args;
+  FindLeaseHolderReply reply;
+  args.set_last(true);
   args.set_filename(filename);
-  args.set_chunk_index(chunk_index);
-  MasterServer_Stub stub(&channel_);
 
-  while ( true ) {
-    brpc::Controller cntl;
-    stub.FileRouteInfo(&cntl, &args, &reply, nullptr);
-    if ( cntl.Failed() ) {
-      LOG(ERROR) << "file route info failed at: " << route_ << " because: " << cntl.ErrorText();
-      if ( cntl.IsCloseConnection() ) {
-        connected_.store(false, std::memory_order_relaxed);
-      }
-      return false;
+  MasterServer_Stub stub(&channel_);
+  stub.FindLeaseHolder(&cntl, &args, &reply, nullptr);
+  if ( cntl.Failed() ) {
+    LOG(ERROR) << "append_info failed at: " << route_ << " because: " << cntl.ErrorText();
+    if ( cntl.IsCloseConnection() ) {
+      connected_.store(false, std::memory_order_relaxed);
     }
-    if ( reply.state() == state_file_chunk_index_err ) {
-      return true;
-    }
-    if ( reply.state() != state_ok ) {
-      return false;
-    }
-    chunks[chunk_index] = reply.chunk_handle();
-    LOG(INFO) << "reply route size: " << reply.route_size();
-    std::vector<std::string> tmp;
-    for (auto it: reply.route()) {
-      tmp.push_back(it);
-    }
-    routes[reply.chunk_handle()] = tmp;
-    chunk_index += 1;
-    args.set_chunk_index(chunk_index);
+    return false;
   }
+  if ( reply.state() != state_ok ) {
+    LOG(INFO) << "master server: " << route_ << " err: " << debug_string(reply.state());
+    return false;
+  }
+  primary = reply.primary();
+  for (auto& r: reply.secondaries()) {
+    secondaries.push_back(r);
+  }
+  chunk_handle = reply.chunk_handle();
+  chunk_index = reply.chunk_index();
+  return true;
 }
+
+//bool MasterClient::file_info(const std::string &filename, std::map<uint64_t, uint64_t> &chunks,
+//                             std::map<uint64_t, std::vector<std::string>> &routes) {
+//  if ( !connected_.load(std::memory_order_relaxed) ) {
+//    LOG(ERROR) << "not connect to: " << route_ << " yet!";
+//    return false;
+//  }
+//
+//  FileRouteInfoArgs args;
+//  FileRouteInfoReply reply;
+//  uint64_t chunk_index = 0;
+//  args.set_filename(filename);
+//  args.set_chunk_index(chunk_index);
+//  MasterServer_Stub stub(&channel_);
+//
+//  while ( true ) {
+//    brpc::Controller cntl;
+//    stub.FileRouteInfo(&cntl, &args, &reply, nullptr);
+//    if ( cntl.Failed() ) {
+//      LOG(ERROR) << "file route info failed at: " << route_ << " because: " << cntl.ErrorText();
+//      if ( cntl.IsCloseConnection() ) {
+//        connected_.store(false, std::memory_order_relaxed);
+//      }
+//      return false;
+//    }
+//    if ( reply.state() == state_file_chunk_index_err ) {
+//      return true;
+//    }
+//    if ( reply.state() != state_ok ) {
+//      return false;
+//    }
+//    chunks[chunk_index] = reply.chunk_handle();
+//    LOG(INFO) << "reply route size: " << reply.route_size();
+//    std::vector<std::string> tmp;
+//    for (auto it: reply.route()) {
+//      tmp.push_back(it);
+//    }
+//    routes[reply.chunk_handle()] = tmp;
+//    chunk_index += 1;
+//    args.set_chunk_index(chunk_index);
+//  }
+//}
 
 
 // ******************* DEBUG *********************

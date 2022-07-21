@@ -6,6 +6,7 @@
 #include "chunk_route.h"
 #include "src/chunk/chunk_client.h"
 #include "src/util/time.h"
+#include "src/util/state_code.h"
 
 namespace gfs {
 
@@ -124,8 +125,9 @@ bool FileInfo::write_info(uint32_t chunk_index, FindLeaseHolderReply* reply) {
     chunk_info->lock(); // 锁传递
   }
 
-  if ( chunk_info->primary != -1 ) {
-    if ( pick_primary(chunk_info->secondaries) < 0 ) { // 无法找出primary节点
+  // 如果当前chunk没有primary，那就从所有副本中选出一个
+  if ( chunk_info->primary == -1 ) {
+    if ( (chunk_info->primary = pick_primary(chunk_info->secondaries)) < 0 ) { // 无法找出primary节点
       chunk_info->unlock();
       return false;
     }
@@ -135,18 +137,62 @@ bool FileInfo::write_info(uint32_t chunk_index, FindLeaseHolderReply* reply) {
       chunk_info->unlock();
       return false;
     }
-    reply->set_primary_route(primary_route);
+    reply->set_primary(primary_route);
   }
   for (auto id : chunk_info->secondaries ) {
     std::string secondary_route;
     if ( !fetch_chunk_server_route(id, secondary_route)) {
       continue; // nip
     }
-    reply->add_routes(secondary_route);
+    reply->add_secondaries(secondary_route);
   }
   chunk_info->unlock();
   return true;
 }
+
+void FileInfo::append_info(const FindLeaseHolderArgs *args, FindLeaseHolderReply *reply) {
+  // 找到最后一个chunk
+  ChunkInfoPtr chunk_info;
+  {
+    std::unique_lock<std::mutex> lock_guard(chunks_mutex_);
+    uint32_t last_index = 0;
+    for (auto it : chunks_) {
+      if ( it.first > last_index ) {
+        last_index = it.first;
+      }
+    }
+    chunk_info = chunks_.find(last_index)->second;
+    chunk_info->lock();
+  }
+  // 当前chunk没有主副本
+  if ( chunk_info->primary == -1 ) {
+    if ( (chunk_info->primary = pick_primary(chunk_info->secondaries)) < 0 ) { // 无法找出primary节点
+      chunk_info->unlock();
+      reply->set_state(state_err);
+      return;
+    }
+    std::string primary_route;
+    if (!fetch_chunk_server_route(chunk_info->primary, primary_route)) {
+      // primary error
+      chunk_info->unlock();
+      reply->set_state(state_err);
+      return;
+    }
+    reply->set_primary(primary_route);
+  }
+  for (auto id : chunk_info->secondaries ) {
+    std::string secondary_route;
+    if ( !fetch_chunk_server_route(id, secondary_route)) {
+      continue; // nip
+    }
+    reply->add_secondaries(secondary_route);
+  }
+  chunk_info->unlock();
+  reply->set_state(state_ok);
+  reply->set_chunk_handle(chunk_info->chunk_handle);
+  reply->set_version(1); // FIXME
+}
+
 
 int FileInfo::pick_primary(const std::vector<int> &secondaries) {
   for (auto id : secondaries ) {

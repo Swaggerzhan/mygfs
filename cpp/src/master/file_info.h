@@ -49,6 +49,8 @@ public:
    */
   bool write_info(uint32_t chunk_index, FindLeaseHolderReply* reply);
 
+  void append_info(const FindLeaseHolderArgs* args, FindLeaseHolderReply* reply);
+
 private:
 
   /*

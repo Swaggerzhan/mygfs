@@ -9,33 +9,6 @@
 
 namespace gfs {
 
-
-struct ChunkServerInfo {
-public:
-
-  ChunkServerInfo(ChunkClient* client)
-  : chunk_client(client)
-  , lease_expire(0)
-  {}
-
-  ~ChunkServerInfo() {
-    delete chunk_client;
-  }
-
-  /*
-   * 将当前的chunk分配为
-   */
-  void mark_as_primary() {
-
-  }
-
-  ChunkClient* chunk_client;
-  uint64_t lease_expire; // Lease 过期时间，绝对时间
-};
-
-
-
-
 MasterServerImpl::MasterServerImpl()
 : files_()
 , files_mutex_()
@@ -43,11 +16,9 @@ MasterServerImpl::MasterServerImpl()
 }
 
 MasterServerImpl::~MasterServerImpl() noexcept {
-
 }
 
 void MasterServerImpl::start() {
-
 }
 
 void MasterServerImpl::CreateFile(google::protobuf::RpcController *cntl,
@@ -129,6 +100,11 @@ void MasterServerImpl::FindLeaseHolder(google::protobuf::RpcController *cntl,
       return;
     }
     file_info = it->second;
+  }
+
+  if ( args->last() ) {
+    file_info->append_info(args, reply);
+    return;
   }
 
   if (!file_info->write_info(args->chunk_index(), reply)) {

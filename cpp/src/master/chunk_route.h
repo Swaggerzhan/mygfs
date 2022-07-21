@@ -27,6 +27,15 @@ int add_chunk_server(const std::string& route);
 bool fetch_chunk_server(int id, ChunkClientPtr& ptr);
 
 /**
+ * @brief 通过route来获取对应的chunk client指针
+ * 如果没有，就尝试添加
+ * @param route: 路由地址
+ * @param ptr: 需要得到的指针
+ * @return: true为成功
+ */
+bool fetch_chunk_server(const std::string& route, ChunkClientPtr& ptr);
+
+/**
  * @brief 通过chunk server id来获取相应的路由信息
  * @param id : chunk server id
  * @param route: 路由返回

@@ -46,6 +46,25 @@ bool fetch_chunk_server(int id, ChunkClientPtr& ptr) {
   return true;
 }
 
+bool fetch_chunk_server(const std::string& route, ChunkClientPtr& ptr) {
+  std::unique_lock<std::mutex> lock_guard(mutex_);
+  for (auto& it : chunks ) {
+    if ( it.second->route() == route ) {
+      ptr = it.second;
+      return true;
+    }
+  }
+  // 找不到，那就尝试添加
+  ChunkClientPtr new_ptr(new ChunkClient(route));
+  if ( !new_ptr->init() ) {
+    return false;
+  }
+  int id = new_ptr->id();
+  ptr = new_ptr;
+  chunks[id] = new_ptr;
+  return true;
+}
+
 bool fetch_chunk_server_route(int id, std::string& route) {
   std::unique_lock<std::mutex> lock_guard(mutex_);
   auto it = chunks.find(id);
